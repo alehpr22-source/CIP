@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabase';
+import { translateAuthError } from '@/lib/utils/auth-errors';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
@@ -26,10 +28,24 @@ export default function LoginPage() {
     try {
       const { error: loginError } = await signIn(correo, password);
       if (loginError) {
-        setError(loginError.message);
+        setError(translateAuthError(loginError.message));
         return;
       }
-      router.push('/dashboard');
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        router.push('/postulante');
+        router.refresh();
+        return;
+      }
+
+      const { data: usuario } = await supabase
+        .from('usuarios')
+        .select('role')
+        .eq('id', session.user.id)
+        .maybeSingle();
+
+      router.push(usuario?.role === 'ADMIN' ? '/admin/solicitudes' : '/postulante');
       router.refresh();
     } catch {
       setError('Ocurrió un error inesperado');
@@ -53,7 +69,7 @@ export default function LoginPage() {
             value={correo}
             onChange={(e) => setCorreo(e.target.value)}
             placeholder='correo@ejemplo.com'
-            className='w-full rounded-2xl px-4 py-4 h-auto'
+            className='w-full rounded-2xl px-4 py-4 h-auto bg-white text-gray-900 border-red-200'
             required
           />
         </div>
@@ -67,7 +83,7 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder='Ingrese su contraseña'
-            className='w-full rounded-2xl px-4 py-4 h-auto'
+            className='w-full rounded-2xl px-4 py-4 h-auto bg-white text-gray-900 border-red-200'
             required
           />
         </div>
@@ -80,9 +96,9 @@ export default function LoginPage() {
           {loading ? 'Ingresando...' : 'Iniciar Sesión'}
         </Button>
 
-        <div className='text-center text-gray-600'>
+        <div className='text-center text-gray-500'>
           ¿No tienes cuenta?{' '}
-          <Link href='/register' className='text-red-700 font-semibold hover:underline'>
+          <Link href='/register' className='text-red-600 font-semibold hover:underline'>
             Regístrate
           </Link>
         </div>

@@ -17,6 +17,7 @@ import {
   supabase,
   type UsuarioRow,
   type UsuarioInsert,
+  type RoleEnum,
 } from '@/lib/supabase';
 import { consultarReniecMock } from '@/lib/services/reniec';
 
@@ -55,6 +56,8 @@ type AuthContextType = {
   signOut: () => Promise<void>;
 
   refreshUsuario: () => Promise<void>;
+
+  hasRole: (role: RoleEnum) => boolean;
 };
 
 // ==========================================
@@ -395,6 +398,10 @@ export function AuthProvider({
     setUsuario(usuarioData);
   }
 
+  function hasRole(role: RoleEnum): boolean {
+    return usuario?.role === role;
+  }
+
   // ==========================================
   // PROVIDER
   // ==========================================
@@ -410,6 +417,7 @@ export function AuthProvider({
         signIn,
         signOut,
         refreshUsuario,
+        hasRole,
       }}
     >
       {children}

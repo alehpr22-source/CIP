@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { consultarReniecMock } from '@/lib/services/reniec';
+import { translateAuthError } from '@/lib/utils/auth-errors';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { InfoAlert } from '@/components/ui/InfoAlert';
@@ -105,7 +106,7 @@ export default function RegisterPage() {
     });
 
     if (error) {
-      setError(error.message);
+      setError(translateAuthError(error.message));
       setLoading(false);
       return;
     }
@@ -128,7 +129,7 @@ export default function RegisterPage() {
             value={formData.dni}
             onChange={handleChange}
             placeholder='12345678'
-            className='bg-white'
+            className='bg-white text-gray-900 border-red-200'
             required
           />
         </div>
@@ -142,17 +143,17 @@ export default function RegisterPage() {
 
         <div className='space-y-2'>
           <label className='text-sm font-medium text-gray-700'>Nombres</label>
-          <Input value={formData.nombres} disabled className='bg-gray-100' />
+          <Input value={formData.nombres} disabled className='bg-red-50 text-gray-500 border-red-100' />
         </div>
 
         <div className='space-y-2'>
           <label className='text-sm font-medium text-gray-700'>Apellido Paterno</label>
-          <Input value={formData.apellido_paterno} disabled className='bg-gray-100' />
+          <Input value={formData.apellido_paterno} disabled className='bg-red-50 text-gray-500 border-red-100' />
         </div>
 
         <div className='space-y-2'>
           <label className='text-sm font-medium text-gray-700'>Apellido Materno</label>
-          <Input value={formData.apellido_materno} disabled className='bg-gray-100' />
+          <Input value={formData.apellido_materno} disabled className='bg-red-50 text-gray-500 border-red-100' />
         </div>
 
         <div className='space-y-2'>
@@ -166,7 +167,7 @@ export default function RegisterPage() {
             value={formData.correo}
             onChange={handleChange}
             placeholder='correo@ejemplo.com'
-            className='bg-white'
+            className='bg-white text-gray-900 border-red-200'
             required
           />
         </div>
@@ -182,7 +183,7 @@ export default function RegisterPage() {
             value={formData.password}
             onChange={handleChange}
             placeholder='••••••••'
-            className='bg-white'
+            className='bg-white text-gray-900 border-red-200'
             required
           />
         </div>
@@ -198,7 +199,7 @@ export default function RegisterPage() {
             value={formData.confirmPassword}
             onChange={handleChange}
             placeholder='••••••••'
-            className='bg-white'
+            className='bg-white text-gray-900 border-red-200'
             required
           />
         </div>
@@ -206,7 +207,7 @@ export default function RegisterPage() {
         <Button
           type='submit'
           disabled={loading || reniecLoading}
-          className='w-full bg-red-600 text-white hover:bg-red-700'
+          className='w-full bg-red-700 text-white hover:bg-red-800'
         >
           {loading ? (
             <>

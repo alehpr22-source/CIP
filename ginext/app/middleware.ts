@@ -77,7 +77,7 @@ export async function middleware(
   ];
 
   const protectedRoutes = [
-    '/dashboard',
+    '/postulante',
     '/admin',
   ];
 
@@ -92,7 +92,7 @@ export async function middleware(
 
     return NextResponse.redirect(
       new URL(
-        '/dashboard',
+        '/postulante',
         request.url
       )
     );

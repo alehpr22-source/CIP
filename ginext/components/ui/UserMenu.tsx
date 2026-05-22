@@ -26,13 +26,13 @@ export function UserMenu({ usuario, onSignOut, variant = 'inline' }: UserMenuPro
             <p className='text-xs text-gray-500 truncate'>{usuario.correo}</p>
           </div>
         </div>
-        <button
-          onClick={onSignOut}
-          className='w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl font-medium transition'
-        >
-          <LogOut className='size-4' />
-          Salir
-        </button>
+          <button
+            onClick={onSignOut}
+            className='w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-xl transition font-medium text-sm'
+          >
+            <LogOut className='size-4' />
+            Salir
+          </button>
       </div>
     );
   }

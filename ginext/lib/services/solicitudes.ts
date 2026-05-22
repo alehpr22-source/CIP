@@ -8,6 +8,7 @@ import {
 export const ACTIVE_SOLICITUD_STATES: SolicitudEstadoEnum[] = [
   'EN_REVISION',
   'OBSERVADO',
+  'APROBADO',
 ];
 
 export async function getSolicitudActivaByUsuario(
@@ -63,7 +64,7 @@ export async function listSolicitudesForAdmin() {
   return supabase
     .from('solicitudes')
     .select('*')
-    .in('estado', ['EN_REVISION', 'OBSERVADO'])
+    .in('estado', ['EN_REVISION', 'OBSERVADO', 'APROBADO', 'RECHAZADO'])
     .order('created_at', { ascending: false });
 }
 
