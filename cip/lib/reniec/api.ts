@@ -1,3 +1,9 @@
+export interface ReniecRequest {
+  dni: string
+  nombres: string
+  apellidos: string
+}
+
 export interface ReniecResponse {
   valido: boolean
   nombres?: string
@@ -5,6 +11,6 @@ export interface ReniecResponse {
   mensaje: string
 }
 
-export function validarConReniec(_dni: string, _nombres: string, _apellidos: string): ReniecResponse {
-  return { valido: false, mensaje: "No implementado" }
+export interface ValidadorReniec {
+  validar(request: ReniecRequest): Promise<ReniecResponse>
 }

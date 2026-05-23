@@ -86,6 +86,10 @@ HU-019: Consulta pública de expediente (por DNI o código, sin login)
 HU-020: Consulta pública de carnet (por CIP o QR, nombre, carrera, estado)
 
 ================================================================================
+DATOS SEMBRADOS EN SUPABASE:
+  - 21 carreras (CIV, SIS, IND, MIN, etc.)
+  - 28 sedes (CD LIMA, CD CALLAO, CD AREQUIPA, etc.)
+
 BASE DE DATOS — TABLAS (SUPABASE)
 ================================================================================
 - carreras (id, codigo, nombre)

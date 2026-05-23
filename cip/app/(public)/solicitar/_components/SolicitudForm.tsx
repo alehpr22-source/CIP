@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/Input"
 import { Select } from "@/components/ui/Select"
 import { FileUpload } from "@/components/ui/FileUpload"
 import { Alert } from "@/components/ui/Alert"
-import { registrarSolicitud, type SolicitudInput } from "@/actions/solicitud.actions"
+import { Spinner } from "@/components/ui/Spinner"
+import { validarDniConReniec, registrarSolicitud, type SolicitudInput } from "@/actions/solicitud.actions"
 import type { Carrera, Sede } from "@/types"
 
 interface Props {
@@ -29,6 +30,11 @@ export function SolicitudForm({ carreras, sedes }: Props) {
   const router = useRouter()
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)
+  const [validandoReniec, setValidandoReniec] = useState(false)
+  const [reniecStatus, setReniecStatus] = useState<{
+    valido: boolean
+    mensaje: string
+  } | null>(null)
   const [result, setResult] = useState<{ success: boolean; expediente?: string; error?: string } | null>(null)
 
   const [form, setForm] = useState({
@@ -57,9 +63,42 @@ export function SolicitudForm({ carreras, sedes }: Props) {
       delete next[field]
       return next
     })
+    if (field === "dni" || field === "nombres" || field === "apellidos") {
+      setReniecStatus(null)
+    }
   }, [])
 
-  function validateStep1() {
+  function datosReniecCompletos() {
+    return form.dni.length === 8
+  }
+
+  async function handleValidarReniec() {
+    if (!datosReniecCompletos()) return
+
+    setValidandoReniec(true)
+    setReniecStatus(null)
+
+    const res = await validarDniConReniec(form.dni, "", "")
+
+    if (res.nombres && res.apellidos) {
+      setForm((prev) => ({
+        ...prev,
+        nombres: res.nombres!,
+        apellidos: res.apellidos!,
+      }))
+      setErrors((prev) => {
+        const next = { ...prev }
+        delete next.nombres
+        delete next.apellidos
+        return next
+      })
+    }
+
+    setReniecStatus({ valido: res.valido, mensaje: res.mensaje })
+    setValidandoReniec(false)
+  }
+
+  function validateStep0() {
     const newErrors: Record<string, string> = {}
 
     if (!form.dni) newErrors.dni = "El DNI es obligatorio"
@@ -71,6 +110,10 @@ export function SolicitudForm({ carreras, sedes }: Props) {
     if (!form.apellidos) newErrors.apellidos = "Los apellidos son obligatorios"
     else if (!validarTexto(form.apellidos)) newErrors.apellidos = "Caracteres inválidos en apellidos"
 
+    if (!reniecStatus?.valido && reniecStatus !== null) {
+      newErrors.reniec = "Debe validar el DNI con RENIEC antes de continuar"
+    }
+
     if (!form.carrera_id) newErrors.carrera_id = "Selecciona una carrera"
     if (!form.sede_id) newErrors.sede_id = "Selecciona una sede"
     if (!form.universidad) newErrors.universidad = "La universidad es obligatoria"
@@ -79,24 +122,17 @@ export function SolicitudForm({ carreras, sedes }: Props) {
     return Object.keys(newErrors).length === 0
   }
 
-  function validateStep2() {
+  function validateStep1() {
     let valid = true
     setFotoError("")
     setTituloError("")
-
-    if (!foto) {
-      setFotoError("La foto personal es obligatoria")
-      valid = false
-    }
-    if (!titulo) {
-      setTituloError("El título profesional es obligatorio")
-      valid = false
-    }
+    if (!foto) { setFotoError("La foto personal es obligatoria"); valid = false }
+    if (!titulo) { setTituloError("El título profesional es obligatorio"); valid = false }
     return valid
   }
 
   async function handleSubmit() {
-    if (!validateStep2()) return
+    if (!validateStep1()) return
 
     setLoading(true)
     setResult(null)
@@ -118,9 +154,7 @@ export function SolicitudForm({ carreras, sedes }: Props) {
     setResult(res)
 
     if (res.success) {
-      setTimeout(() => {
-        router.push(`/pago/${res.expedienteId}`)
-      }, 2000)
+      setTimeout(() => router.push(`/pago/${res.expedienteId}`), 2000)
     }
 
     setLoading(false)
@@ -130,8 +164,7 @@ export function SolicitudForm({ carreras, sedes }: Props) {
     setFoto(file)
     setFotoError("")
     if (file) {
-      const url = URL.createObjectURL(file)
-      setFotoPreview(url)
+      setFotoPreview(URL.createObjectURL(file))
     } else {
       setFotoPreview(null)
     }
@@ -141,8 +174,7 @@ export function SolicitudForm({ carreras, sedes }: Props) {
     setTitulo(file)
     setTituloError("")
     if (file) {
-      const url = URL.createObjectURL(file)
-      setTituloPreview(url)
+      setTituloPreview(URL.createObjectURL(file))
     } else {
       setTituloPreview(null)
     }
@@ -187,21 +219,18 @@ export function SolicitudForm({ carreras, sedes }: Props) {
             ))}
           </div>
 
+          {/* Step 0: Datos personales */}
           {step === 0 && (
             <div className="space-y-4">
-              <Input
-                label="DNI"
-                placeholder="12345678"
-                maxLength={8}
-                value={form.dni}
-                onChange={(e) => {
-                  const v = e.target.value.replace(/\D/g, "")
-                  updateField("dni", v)
-                }}
-                error={errors.dni}
-              />
-
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-3">
+                <Input
+                  label="DNI"
+                  placeholder="12345678"
+                  maxLength={8}
+                  value={form.dni}
+                  onChange={(e) => updateField("dni", e.target.value.replace(/\D/g, ""))}
+                  error={errors.dni}
+                />
                 <Input
                   label="Nombres"
                   placeholder="Juan Carlos"
@@ -217,6 +246,28 @@ export function SolicitudForm({ carreras, sedes }: Props) {
                   error={errors.apellidos}
                 />
               </div>
+
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  loading={validandoReniec}
+                  disabled={!datosReniecCompletos() || validandoReniec}
+                  onClick={handleValidarReniec}
+                >
+                  Validar con RENIEC
+                </Button>
+
+                {validandoReniec && <Spinner size="sm" />}
+
+                {reniecStatus && (
+                  <span className={`text-sm font-medium ${reniecStatus.valido ? "text-green-600" : "text-red-600"}`}>
+                    {reniecStatus.valido ? "✓ Identidad verificada" : `✗ ${reniecStatus.mensaje}`}
+                  </span>
+                )}
+              </div>
+
+              {errors.reniec && <p className="text-sm text-red-600">{errors.reniec}</p>}
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <Input
@@ -261,13 +312,14 @@ export function SolicitudForm({ carreras, sedes }: Props) {
               />
 
               <div className="flex justify-end pt-4">
-                <Button onClick={() => { if (validateStep1()) setStep(1) }}>
+                <Button onClick={() => { if (validateStep0()) setStep(1) }}>
                   Siguiente
                 </Button>
               </div>
             </div>
           )}
 
+          {/* Step 1: Documentos */}
           {step === 1 && (
             <div className="space-y-6">
               <FileUpload
@@ -289,16 +341,13 @@ export function SolicitudForm({ carreras, sedes }: Props) {
               />
 
               <div className="flex justify-between pt-4">
-                <Button variant="outline" onClick={() => setStep(0)}>
-                  Atrás
-                </Button>
-                <Button onClick={() => setStep(2)}>
-                  Revisar solicitud
-                </Button>
+                <Button variant="outline" onClick={() => setStep(0)}>Atrás</Button>
+                <Button onClick={() => setStep(2)}>Revisar solicitud</Button>
               </div>
             </div>
           )}
 
+          {/* Step 2: Confirmación */}
           {step === 2 && (
             <div className="space-y-4">
               <Alert variant="info" title="Resumen de tu solicitud">
@@ -311,6 +360,12 @@ export function SolicitudForm({ carreras, sedes }: Props) {
                 <p><span className="font-medium text-gray-700">Carrera:</span> {carreras.find((c) => c.id === form.carrera_id)?.nombre}</p>
                 <p><span className="font-medium text-gray-700">Sede:</span> {sedes.find((s) => s.id === form.sede_id)?.nombre}</p>
                 <p><span className="font-medium text-gray-700">Universidad:</span> {form.universidad}</p>
+                <p>
+                  <span className="font-medium text-gray-700">RENIEC:</span>{" "}
+                  <span className={reniecStatus?.valido ? "text-green-600" : "text-red-600"}>
+                    {reniecStatus?.valido ? "Verificado" : "No validado"}
+                  </span>
+                </p>
                 {fotoPreview && (
                   <div>
                     <span className="font-medium text-gray-700">Foto:</span>{" "}
@@ -320,12 +375,8 @@ export function SolicitudForm({ carreras, sedes }: Props) {
               </div>
 
               <div className="flex justify-between pt-4">
-                <Button variant="outline" onClick={() => setStep(1)}>
-                  Atrás
-                </Button>
-                <Button loading={loading} onClick={handleSubmit}>
-                  Enviar solicitud
-                </Button>
+                <Button variant="outline" onClick={() => setStep(1)}>Atrás</Button>
+                <Button loading={loading} onClick={handleSubmit}>Enviar solicitud</Button>
               </div>
             </div>
           )}

@@ -1,8 +1,8 @@
-import { createClient } from "@/lib/supabase/server"
+import { createAuthClient } from "@/lib/supabase/auth-server"
 import Link from "next/link"
 
 export async function AdminHeader() {
-  const supabase = await createClient()
+  const supabase = await createAuthClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   return (

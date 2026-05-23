@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
+import { getValidadorReniec } from "@/lib/reniec"
 
 export interface SolicitudInput {
   dni: string
@@ -16,8 +17,24 @@ export interface SolicitudInput {
   titulo_base64: string
 }
 
+export async function validarDniConReniec(dni: string, nombres: string, apellidos: string) {
+  const validador = getValidadorReniec()
+  return await validador.validar({ dni, nombres, apellidos })
+}
+
 export async function registrarSolicitud(input: SolicitudInput) {
   const supabase = await createClient()
+
+  const validador = getValidadorReniec()
+  const reniecResult = await validador.validar({
+    dni: input.dni,
+    nombres: input.nombres,
+    apellidos: input.apellidos,
+  })
+
+  if (!reniecResult.valido) {
+    return { error: `Validación RENIEC falló: ${reniecResult.mensaje}` }
+  }
 
   const { data: carreras, error: errCarreras } = await supabase
     .from("carreras")
@@ -48,7 +65,7 @@ export async function registrarSolicitud(input: SolicitudInput) {
       universidad: input.universidad,
       foto_url: input.foto_base64,
       titulo_url: input.titulo_base64,
-      validado_reniec: false,
+      validado_reniec: true,
     })
     .select()
     .single()
@@ -80,14 +97,4 @@ export async function registrarSolicitud(input: SolicitudInput) {
   }
 }
 
-export async function obtenerCarreras() {
-  const supabase = await createClient()
-  const { data } = await supabase.from("carreras").select("id, codigo, nombre").order("nombre")
-  return data ?? []
-}
 
-export async function obtenerSedes() {
-  const supabase = await createClient()
-  const { data } = await supabase.from("sedes").select("id, nombre").order("nombre")
-  return data ?? []
-}

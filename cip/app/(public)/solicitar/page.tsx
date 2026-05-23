@@ -1,5 +1,5 @@
 import { SolicitudForm } from "./_components/SolicitudForm"
-import { obtenerCarreras, obtenerSedes } from "@/actions/solicitud.actions"
+import { obtenerCarreras, obtenerSedes } from "@/lib/carreras"
 
 export default async function SolicitarPage() {
   const [carreras, sedes] = await Promise.all([obtenerCarreras(), obtenerSedes()])
