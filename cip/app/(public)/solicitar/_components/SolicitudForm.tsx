@@ -9,6 +9,7 @@ import { FileUpload } from "@/components/ui/FileUpload"
 import { Alert } from "@/components/ui/Alert"
 import { Spinner } from "@/components/ui/Spinner"
 import { validarDniConReniec, registrarSolicitud, type SolicitudInput } from "@/actions/solicitud.actions"
+import { generarVoucher } from "@/lib/pago/procesador"
 import type { Carrera, Sede } from "@/types"
 
 interface Props {
@@ -16,26 +17,28 @@ interface Props {
   sedes: Sede[]
 }
 
-const STEPS = ["Datos personales", "Documentos", "Confirmación"]
+const STEPS = ["Datos personales", "Documentos", "Pago", "Confirmación"]
 
 function validarDNI(value: string) {
   return /^\d{8}$/.test(value)
-}
-
-function validarTexto(value: string) {
-  return /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]+$/.test(value)
 }
 
 export function SolicitudForm({ carreras, sedes }: Props) {
   const router = useRouter()
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)
+  const [pagando, setPagando] = useState(false)
   const [validandoReniec, setValidandoReniec] = useState(false)
   const [reniecStatus, setReniecStatus] = useState<{
     valido: boolean
     mensaje: string
   } | null>(null)
-  const [result, setResult] = useState<{ success: boolean; expediente?: string; error?: string } | null>(null)
+  const [voucherData, setVoucherData] = useState<{
+    transaccionId: string
+    voucherBase64: string
+    fecha: string
+  } | null>(null)
+  const [result, setResult] = useState<{ success?: boolean; expediente?: string; error?: string } | null>(null)
 
   const [form, setForm] = useState({
     dni: "",
@@ -53,8 +56,11 @@ export function SolicitudForm({ carreras, sedes }: Props) {
   const [fotoPreview, setFotoPreview] = useState<string | null>(null)
   const [titulo, setTitulo] = useState<File | null>(null)
   const [tituloPreview, setTituloPreview] = useState<string | null>(null)
+  const [dniFile, setDniFile] = useState<File | null>(null)
+  const [dniPreview, setDniPreview] = useState<string | null>(null)
   const [fotoError, setFotoError] = useState("")
   const [tituloError, setTituloError] = useState("")
+  const [dniError, setDniError] = useState("")
 
   const updateField = useCallback((field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }))
@@ -104,13 +110,7 @@ export function SolicitudForm({ carreras, sedes }: Props) {
     if (!form.dni) newErrors.dni = "El DNI es obligatorio"
     else if (!validarDNI(form.dni)) newErrors.dni = "El DNI debe tener 8 dígitos numéricos"
 
-    if (!form.nombres) newErrors.nombres = "Los nombres son obligatorios"
-    else if (!validarTexto(form.nombres)) newErrors.nombres = "Caracteres inválidos en nombres"
-
-    if (!form.apellidos) newErrors.apellidos = "Los apellidos son obligatorios"
-    else if (!validarTexto(form.apellidos)) newErrors.apellidos = "Caracteres inválidos en apellidos"
-
-    if (!reniecStatus?.valido && reniecStatus !== null) {
+    if (!reniecStatus?.valido) {
       newErrors.reniec = "Debe validar el DNI con RENIEC antes de continuar"
     }
 
@@ -126,14 +126,33 @@ export function SolicitudForm({ carreras, sedes }: Props) {
     let valid = true
     setFotoError("")
     setTituloError("")
+    setDniError("")
     if (!foto) { setFotoError("La foto personal es obligatoria"); valid = false }
     if (!titulo) { setTituloError("El título profesional es obligatorio"); valid = false }
+    if (!dniFile) { setDniError("La copia del DNI es obligatoria"); valid = false }
     return valid
   }
 
-  async function handleSubmit() {
-    if (!validateStep1()) return
+  async function handlePagar() {
+    setPagando(true)
 
+    await new Promise((r) => setTimeout(r, 2000))
+
+    const transaccionId = "TXN-" + Date.now().toString(36).toUpperCase()
+
+    const vData = generarVoucher({
+      transaccionId,
+      dni: form.dni,
+      nombres: form.nombres,
+      apellidos: form.apellidos,
+      monto: 1500,
+    })
+
+    setVoucherData({ transaccionId, voucherBase64: vData.voucherBase64, fecha: vData.fecha })
+    setPagando(false)
+  }
+
+  async function handleSubmit() {
     setLoading(true)
     setResult(null)
 
@@ -148,44 +167,43 @@ export function SolicitudForm({ carreras, sedes }: Props) {
       ...form,
       foto_base64: await toBase64(foto!),
       titulo_base64: await toBase64(titulo!),
+      dni_base64: await toBase64(dniFile!),
+      voucher_base64: voucherData?.voucherBase64 ?? "",
+      transaccion_id: voucherData?.transaccionId ?? "",
     }
 
     const res = await registrarSolicitud(input)
     setResult(res)
 
     if (res.success) {
-      setTimeout(() => router.push(`/pago/${res.expedienteId}`), 2000)
+      setTimeout(() => router.push(`/consulta?dni=${form.dni}`), 2000)
     }
 
     setLoading(false)
   }
 
-  function handleFotoChange(file: File | null) {
-    setFoto(file)
-    setFotoError("")
-    if (file) {
-      setFotoPreview(URL.createObjectURL(file))
-    } else {
-      setFotoPreview(null)
-    }
-  }
-
-  function handleTituloChange(file: File | null) {
-    setTitulo(file)
-    setTituloError("")
-    if (file) {
-      setTituloPreview(URL.createObjectURL(file))
-    } else {
-      setTituloPreview(null)
+  function handleFileChange(
+    setFile: (f: File | null) => void,
+    setPreview: (u: string | null) => void,
+    setError: (e: string) => void,
+  ) {
+    return (file: File | null) => {
+      setFile(file)
+      setError("")
+      if (file) {
+        setPreview(URL.createObjectURL(file))
+      } else {
+        setPreview(null)
+      }
     }
   }
 
   return (
     <div className="space-y-8">
       {result?.success && (
-        <Alert variant="success" title="Solicitud registrada">
-          <p>Tu expediente <strong>{result.expediente}</strong> ha sido creado.</p>
-          <p className="mt-1">Serás redirigido al paso de pago...</p>
+        <Alert variant="success" title="Solicitud registrada exitosamente">
+          <p>Tu expediente ha sido creado.</p>
+          <p className="mt-1">Serás redirigido a la consulta de tu trámite...</p>
         </Alert>
       )}
 
@@ -197,9 +215,9 @@ export function SolicitudForm({ carreras, sedes }: Props) {
 
       {!result?.success && (
         <>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 overflow-x-auto">
             {STEPS.map((label, i) => (
-              <div key={label} className="flex items-center gap-2">
+              <div key={label} className="flex items-center gap-2 shrink-0">
                 <div
                   className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
                     i === step
@@ -219,7 +237,7 @@ export function SolicitudForm({ carreras, sedes }: Props) {
             ))}
           </div>
 
-          {/* Step 0: Datos personales */}
+          {/* Paso 1: Datos personales + RENIEC */}
           {step === 0 && (
             <div className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-3">
@@ -319,7 +337,7 @@ export function SolicitudForm({ carreras, sedes }: Props) {
             </div>
           )}
 
-          {/* Step 1: Documentos */}
+          {/* Paso 2: Documentos (foto, título, copia DNI) */}
           {step === 1 && (
             <div className="space-y-6">
               <FileUpload
@@ -328,7 +346,7 @@ export function SolicitudForm({ carreras, sedes }: Props) {
                 maxSizeMB={5}
                 preview={fotoPreview}
                 error={fotoError}
-                onChange={handleFotoChange}
+                onChange={handleFileChange(setFoto, setFotoPreview, setFotoError)}
               />
 
               <FileUpload
@@ -337,21 +355,85 @@ export function SolicitudForm({ carreras, sedes }: Props) {
                 maxSizeMB={10}
                 preview={tituloPreview}
                 error={tituloError}
-                onChange={handleTituloChange}
+                onChange={handleFileChange(setTitulo, setTituloPreview, setTituloError)}
+              />
+
+              <FileUpload
+                label="Copia del DNI"
+                accept=".jpg,.jpeg,.png,.pdf"
+                maxSizeMB={5}
+                preview={dniPreview}
+                error={dniError}
+                onChange={handleFileChange(setDniFile, setDniPreview, setDniError)}
               />
 
               <div className="flex justify-between pt-4">
                 <Button variant="outline" onClick={() => setStep(0)}>Atrás</Button>
-                <Button onClick={() => setStep(2)}>Revisar solicitud</Button>
+                <Button onClick={() => { if (validateStep1()) setStep(2) }}>
+                  Ir a pago
+                </Button>
               </div>
             </div>
           )}
 
-          {/* Step 2: Confirmación */}
+          {/* Paso 3: Pago + generación de voucher */}
           {step === 2 && (
+            <div className="space-y-6">
+              <Alert variant="info" title="Pago de inscripción">
+                <p>El derecho de inscripción es de <strong>S/ 1,500.00</strong>.</p>
+                <p className="mt-1">Primer mes de colegiatura <strong>GRATIS</strong>.</p>
+              </Alert>
+
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-6 text-center">
+                <p className="text-sm text-gray-500">Monto a pagar</p>
+                <p className="text-4xl font-bold text-gray-900">S/ 1,500.00</p>
+              </div>
+
+              {!voucherData && (
+                <Button
+                  className="w-full"
+                  size="lg"
+                  loading={pagando}
+                  onClick={handlePagar}
+                >
+                  {pagando ? "Procesando pago..." : "Pagar ahora"}
+                </Button>
+              )}
+
+              {voucherData && (
+                <div className="space-y-4">
+                  <Alert variant="success" title="Pago exitoso">
+                    <p>Operación: <strong>{voucherData.transaccionId}</strong></p>
+                    <p className="mt-1">Monto: S/ 1,500.00 — {voucherData.fecha}</p>
+                  </Alert>
+
+                  <div className="space-y-1">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Comprobante de pago (generado automáticamente)
+                    </label>
+                    <div className="flex justify-center rounded-lg border border-gray-200 bg-gray-50 p-4">
+                      <img
+                        src={voucherData.voucherBase64}
+                        alt="Voucher de pago"
+                        className="max-w-full rounded shadow-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between pt-4">
+                    <Button variant="outline" onClick={() => setStep(1)}>Atrás</Button>
+                    <Button onClick={() => setStep(3)}>Revisar y enviar</Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Paso 4: Confirmación */}
+          {step === 3 && voucherData && (
             <div className="space-y-4">
               <Alert variant="info" title="Resumen de tu solicitud">
-                <p>Revisa tus datos antes de enviar la solicitud.</p>
+                <p>Revisa todos los datos antes de enviar.</p>
               </Alert>
 
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm space-y-2">
@@ -362,9 +444,11 @@ export function SolicitudForm({ carreras, sedes }: Props) {
                 <p><span className="font-medium text-gray-700">Universidad:</span> {form.universidad}</p>
                 <p>
                   <span className="font-medium text-gray-700">RENIEC:</span>{" "}
-                  <span className={reniecStatus?.valido ? "text-green-600" : "text-red-600"}>
-                    {reniecStatus?.valido ? "Verificado" : "No validado"}
-                  </span>
+                  <span className="text-green-600">Verificado</span>
+                </p>
+                <p>
+                  <span className="font-medium text-gray-700">Pago:</span>{" "}
+                  <span className="text-green-600">S/ 1,500.00 — {voucherData.transaccionId}</span>
                 </p>
                 {fotoPreview && (
                   <div>
@@ -375,7 +459,7 @@ export function SolicitudForm({ carreras, sedes }: Props) {
               </div>
 
               <div className="flex justify-between pt-4">
-                <Button variant="outline" onClick={() => setStep(1)}>Atrás</Button>
+                <Button variant="outline" onClick={() => setStep(2)}>Atrás</Button>
                 <Button loading={loading} onClick={handleSubmit}>Enviar solicitud</Button>
               </div>
             </div>

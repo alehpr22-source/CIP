@@ -22,6 +22,7 @@ export interface Solicitante {
   universidad: string
   foto_url: string
   titulo_url: string
+  dni_url: string
   validado_reniec: boolean
 }
 
