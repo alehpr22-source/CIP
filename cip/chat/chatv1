@@ -1,0 +1,220 @@
+﻿========================================
+ESPECIFICACIÓN ORIGINAL (MENSAJE INICIAL)
+========================================
+
+🏛️ SISTEMA WEB DE COLEGIATURA DE INGENIEROS (FLUJO COMPLETO)
+Sistema inspirado en el proceso del Colegio de Ingenieros del Perú
+
+ZONAS:
+  🟦 Zona pública (usuario) — Acceso libre (sin login)
+  🟨 Zona administrativa (admin) — Acceso con login + JWT
+
+FLUJO DEL USUARIO:
+  1. Ingreso a la web
+  2. Solicitud de colegiatura (DNI, nombres, apellidos, carrera, universidad, foto, título)
+  3. Validación RENIEC automática
+  4. Pago de inscripción S/1500
+  5. Creación de expediente (EXP-2026-00045)
+
+FLUJO DEL ADMIN:
+  1. Login administrativo (/admin)
+  2. Bandeja de expedientes (filtros: DNI, expediente, estado)
+  3. Revisión (aprobar/observar/rechazar)
+  4. Generación CIP (5 dígitos con prefijo, ej: SIS-00001)
+  5. Generación carnet digital (foto, nombre, carrera, CIP, QR, estado)
+
+SISTEMA DE PAGOS POST-COLEGIATURA:
+  - Primer mes GRATIS, desde mes 2: S/20 mensual
+  - Pago virtual (pasarela) o presencial (admin valida)
+  - Deuda acumulativa si no paga
+
+ESTADOS DEL COLEGIADO:
+  🟢 Habilitado — pagos al día
+  🔴 Inhabilitado — deuda pendiente (carnet con marca de agua "INHABILITADO")
+
+CONSULTA PÚBLICA:
+  Sin login — ingresar DNI o CIP → ver estado + carnet
+
+ARQUITECTURA:
+  Usuario → Formulario + RENIEC + Pago → BD → Admin → Validación → CIP → Carnet → Consulta
+
+================================================================================
+ÉPICA 1: REGISTRO Y SOLICITUD DE COLEGIATURA
+================================================================================
+HU-001: Registro datos personales (DNI, nombres, apellidos, carrera, universidad)
+        Validación campos obligatorios, caracteres inválidos, responsive
+HU-002: Carga de documentos (foto personal, título profesional)
+        Formatos: PDF/JPG/PNG, peso máximo, vista previa
+HU-003: Validación de identidad con RENIEC
+        Consulta automática por DNI, coincidencia exacta de nombres
+HU-004: Generación de expediente (código único EXP-AAAA-00001, estado Pendiente)
+
+================================================================================
+ÉPICA 2: GESTIÓN DE PAGOS DE INSCRIPCIÓN
+================================================================================
+HU-005: Pago virtual S/1500 mediante pasarela, fecha/hora, impedir duplicados
+HU-006: Registro pago presencial con comprobante, estado "Pendiente de validación"
+HU-007: Validación de pagos presenciales por admin (aprobar/rechazar con observaciones)
+
+================================================================================
+ÉPICA 3: GESTIÓN ADMINISTRATIVA DE EXPEDIENTES
+================================================================================
+HU-008: Inicio de sesión admin (usuario+contraseña, token JWT, expiración)
+HU-009: Visualización de expedientes (búsqueda por DNI/código, filtro por estado)
+HU-010: Revisión (aprobar/observar/rechazar con observaciones, historial de cambios)
+HU-011: Corrección de expediente observado (usuario ve obs, reemplaza docs, reenvía)
+
+================================================================================
+ÉPICA 4: GENERACIÓN DE COLEGIATURA Y CARNET DIGITAL
+================================================================================
+HU-012: Generación número CIP único (5 dígitos + prefijo carrera, sin duplicados)
+HU-013: Carnet digital (foto, nombre, carrera, CIP, estado, QR)
+HU-014: Descarga del carnet (PDF o imagen, manteniendo calidad)
+
+================================================================================
+ÉPICA 5: GESTIÓN DE MENSUALIDADES Y HABILITACIÓN
+================================================================================
+HU-015: Pago de mensualidades (mes 1 gratis, desde mes 2: S/20)
+HU-016: Visualización de deuda acumulada (S/20 por mes impago)
+HU-017: Gestión automática de habilitación (sin deuda → Habilitado, con deuda → Inhabilitado)
+HU-018: Marca de agua "INHABILITADO" en carnet (pantalla y descargas)
+
+================================================================================
+ÉPICA 6: CONSULTA PÚBLICA Y VERIFICACIÓN
+================================================================================
+HU-019: Consulta pública de expediente (por DNI o código, sin login)
+HU-020: Consulta pública de carnet (por CIP o QR, nombre, carrera, estado)
+
+================================================================================
+BASE DE DATOS — TABLAS (SUPABASE)
+================================================================================
+- carreras (id, codigo, nombre)
+- sedes (id, nombre, direccion, telefono)
+- cip_correlativos (carrera_id, ultimo_numero) — control Enterprise
+- solicitantes (dni, nombres, apellidos, correo, telefono, carrera_id, sede_id, universidad, foto_url, titulo_url, validado_reniec)
+- expedientes (solicitante_id, codigo_expediente, estado, observaciones, fecha_revision)
+- pagos_inscripcion (expediente_id, tipo_pago, monto=1500, estado, transaccion_id, comprobante_url)
+- usuarios_admin (auth_user_id, nombres, apellidos, correo, rol, sede_id)
+- historial_estados_expediente (expediente_id, admin_id, estado_anterior, estado_nuevo, comentario)
+- colegiados (expediente_id, carrera_id, numero_cip, estado_habilitacion, fecha_colegiatura, carnet_url, qr_url)
+- pagos_mensualidades (colegiado_id, anio, mes, monto=20, tipo_pago, estado)
+
+TRIGGERS:
+  - generar_codigo_expediente: auto EXP-AAAA-00001 al insertar expediente
+  - inicializar_correlativo_carrera: crea registro en cip_correlativos al crear carrera
+  - generar_numero_cip: bloquea fila, incrementa y asigna SIS-00001 (concurrente-safe)
+  - actualizar_habilitacion: cuenta deudas pendientes, actualiza estado
+
+RLS (Row Level Security):
+  - Anon puede INSERT solicitantes y SELECT colegiados
+  - Authenticated (con registro en usuarios_admin) puede CRUD en todas las tablas
+  - Función RPC buscar_expediente(dni, codigo) para consulta pública segura
+
+================================================================================
+FIN DE ESPECIFICACIÓN ORIGINAL
+================================================================================
+
+========================================
+CHAT V1 — RESUMEN ESENCIAL DEL PROYECTO
+========================================
+
+FECHA: 23/05/2026
+PROYECTO: Sistema Web de Colegiatura de Ingenieros (CIP)
+INSPIRADO EN: Colegio de Ingenieros del Perú
+
+========================================
+DECISIONES DE ARQUITECTURA
+========================================
+
+Framework: Next.js 16 (App Router) + TypeScript
+Estilos: Tailwind CSS v4
+Base de datos: Supabase (PostgreSQL) — ya conectada
+Auth admin: Supabase Auth (vinculado a tabla usuarios_admin)
+Pasarela pagos: Simulada (MVP)
+Carnet digital: Generado en cliente con html-to-image
+Estructura: Sin directorio src/ (todo en la raíz)
+Server Actions: Centralizadas en carpeta actions/
+
+========================================
+ESTRUCTURA DE CARPETAS
+========================================
+
+cip/
+├── middleware.ts               # Protege /admin
+├── actions/                    # Server Actions
+│   ├── solicitud.actions.ts
+│   ├── pago.actions.ts
+│   ├── auth.actions.ts
+│   ├── expediente.actions.ts
+│   └── colegiado.actions.ts
+│
+├── app/
+│   ├── layout.tsx | page.tsx | globals.css
+│   ├── (public)/
+│   │   ├── layout.tsx (PublicNavbar + Footer)
+│   │   ├── solicitar/   (HU-001 a HU-004)
+│   │   ├── pago/[expedienteId]/ (HU-005)
+│   │   ├── consulta/    (HU-019)
+│   │   └── carnet/[cip]/ (HU-013, HU-014)
+│   └── admin/
+│       ├── login/       (HU-008)
+│       └── (dashboard)/
+│           ├── expedientes/ (HU-009, HU-010, HU-011)
+│           └── colegiados/  (HU-012)
+│
+├── components/
+│   ├── ui/     (8 primitivas)
+│   ├── layout/ (4 componentes)
+│   └── carnet/ (CarnetDigital, CarnetQR, Watermark)
+│
+├── lib/
+│   ├── supabase/ (client, server, admin, middleware, types)
+│   ├── reniec/
+│   ├── pago/
+│   └── carnet/
+│
+├── types/index.ts
+├── public/images/
+├── .env.local | .env.example
+└── package.json
+
+========================================
+DEPENDENCIAS INSTALADAS
+========================================
+
+Producción: @supabase/supabase-js, @supabase/ssr, qrcode.react,
+            html-to-image, file-saver
+Dev: @types/file-saver
+
+========================================
+HISTORIAS MVP IMPLEMENTADAS
+========================================
+
+HU-001 (Registro datos)    ✓ — Formulario multi-paso funcional
+HU-002 (Carga docs)        ✓ — FileUpload con drag & drop + preview
+HU-003 (RENIEC)            — Pendiente de implementar
+HU-004 (Expediente)        ✓ — Server Action + trigger SQL
+HU-005 (Pago virtual)      — Pendiente
+HU-008 (Login admin)       — Pendiente
+HU-009 (Lista expedientes) — Pendiente
+HU-010 (Revisión)          — Pendiente
+HU-011 (Corrección)        — Pendiente
+HU-012 (CIP)               — Pendiente (trigger SQL listo)
+HU-013 (Carnet digital)    — Pendiente
+HU-014 (Descarga carnet)   — Pendiente
+HU-019 (Consulta pública)  — Pendiente
+
+Diferidas: HU-006, HU-007 (pago presencial), HU-015 a HU-018 (mensualidades)
+
+========================================
+PROXIMOS PASOS (ORDEN SUGERIDO)
+========================================
+
+1. HU-003: Validación RENIEC simulada
+2. HU-005: Pago virtual simulado
+3. HU-008: Login admin con Supabase Auth + middleware
+4. HU-009: Bandeja de expedientes admin
+5. HU-010: Revisión (aprobar/observar/rechazar)
+6. HU-012: Activar generación de CIP + UI
+7. HU-013 + HU-014: Carnet digital + descarga
+8. HU-019: Consulta pública
