@@ -1,9 +1,30 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import { requireAdmin } from "@/lib/auth-helper"
+import { requireAdminRole } from "@/lib/auth-helper"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
+
+export type RevisionCampos = Record<string, boolean>
+
+async function crearNotificacion(supabase: ReturnType<typeof createClient>, expedienteId: string, tipo: string, titulo: string, mensaje: string, campos?: RevisionCampos) {
+  const { data: exp } = await supabase
+    .from("expedientes")
+    .select("solicitante_id")
+    .eq("id", expedienteId)
+    .single()
+
+  if (!exp) return
+
+  const payload = campos ? JSON.stringify({ texto: mensaje, campos }) : mensaje
+
+  await supabase.from("notificaciones").insert({
+    solicitante_id: exp.solicitante_id,
+    tipo,
+    titulo,
+    mensaje: payload,
+  })
+}
 
 export interface FiltrosExpedientes {
   estado?: string
@@ -37,9 +58,19 @@ export async function listarExpedientes(filtros: FiltrosExpedientes = {}) {
   }
 
   if (filtros.busqueda) {
-    query = query.or(
-      `solicitantes.dni.ilike.%${filtros.busqueda}%,solicitantes.nombres.ilike.%${filtros.busqueda}%,solicitantes.apellido_paterno.ilike.%${filtros.busqueda}%,solicitantes.apellido_materno.ilike.%${filtros.busqueda}%`,
-    )
+    const busqueda = filtros.busqueda
+    const { data: ids } = await supabase
+      .from("solicitantes")
+      .select("id")
+      .or(
+        `dni.ilike.%${busqueda}%,nombres.ilike.%${busqueda}%,apellido_paterno.ilike.%${busqueda}%,apellido_materno.ilike.%${busqueda}%`,
+      )
+
+    if (ids && ids.length > 0) {
+      query = query.in("solicitante_id", ids.map((r) => r.id))
+    } else {
+      return { data: [] }
+    }
   }
 
   const { data, error } = await query
@@ -111,7 +142,7 @@ export async function obtenerDetalleExpediente(id: string) {
 }
 
 export async function aprobarExpediente(expedienteId: string, _formData?: FormData) {
-  const auth = await requireAdmin()
+  const auth = await requireAdminRole(["SuperAdmin", "Revisor"])
   if (!auth.success) return { error: auth.error }
   const { supabase, admin } = auth
 
@@ -137,6 +168,10 @@ export async function aprobarExpediente(expedienteId: string, _formData?: FormDa
     estado_nuevo: "Pendiente de pago",
   })
 
+  await crearNotificacion(supabase, expedienteId, "aprobado",
+    "Expediente aprobado",
+    "Tu documentación ha sido aprobada. Ahora puedes realizar el pago de inscripción de S/1500.")
+
   revalidatePath("/admin/expedientes")
   redirect("/admin/expedientes")
 }
@@ -144,7 +179,7 @@ export async function aprobarExpediente(expedienteId: string, _formData?: FormDa
 export async function observarExpediente(expedienteId: string, comentario: string) {
   if (!comentario.trim()) return { error: "Debes agregar un comentario" }
 
-  const auth = await requireAdmin()
+  const auth = await requireAdminRole(["SuperAdmin", "Revisor"])
   if (!auth.success) return { error: auth.error }
   const { supabase, admin } = auth
 
@@ -171,6 +206,10 @@ export async function observarExpediente(expedienteId: string, comentario: strin
     comentario,
   })
 
+  await crearNotificacion(supabase, expedienteId, "observado",
+    "Expediente observado",
+    `Tu expediente ha sido observado. Motivo: ${comentario}. Ingresa a tu dashboard para corregir los documentos.`)
+
   revalidatePath("/admin/expedientes")
   redirect("/admin/expedientes")
 }
@@ -178,7 +217,7 @@ export async function observarExpediente(expedienteId: string, comentario: strin
 export async function rechazarExpediente(expedienteId: string, comentario: string) {
   if (!comentario.trim()) return { error: "Debes agregar un comentario" }
 
-  const auth = await requireAdmin()
+  const auth = await requireAdminRole(["SuperAdmin", "Revisor"])
   if (!auth.success) return { error: auth.error }
   const { supabase, admin } = auth
 
@@ -205,12 +244,16 @@ export async function rechazarExpediente(expedienteId: string, comentario: strin
     comentario,
   })
 
+  await crearNotificacion(supabase, expedienteId, "rechazado",
+    "Expediente rechazado",
+    `Tu expediente ha sido rechazado. Motivo: ${comentario}.`)
+
   revalidatePath("/admin/expedientes")
   redirect("/admin/expedientes")
 }
 
 export async function aprobarPago(expedienteId: string, _formData?: FormData) {
-  const auth = await requireAdmin()
+  const auth = await requireAdminRole(["SuperAdmin", "Tesoreria"])
   if (!auth.success) return { error: auth.error }
   const { supabase, admin } = auth
 
@@ -220,6 +263,7 @@ export async function aprobarPago(expedienteId: string, _formData?: FormData) {
       id,
       estado,
       solicitantes!expedientes_solicitante_id_fkey (
+        id,
         carrera_id
       )
     `)
@@ -244,45 +288,16 @@ export async function aprobarPago(expedienteId: string, _formData?: FormData) {
 
   if (errPago) return { error: errPago.message }
 
-  const carreraId = (expediente.solicitantes as unknown as { carrera_id: string }).carrera_id
+  const { data: cipResult } = await supabase.rpc("incrementar_cip")
+  const numeroCip = cipResult as string
 
-  const { data: carrera } = await supabase
-    .from("carreras")
-    .select("codigo")
-    .eq("id", carreraId)
-    .single()
-
-  if (!carrera) return { error: "Carrera no encontrada" }
-
-  const { data: correlativo } = await supabase
-    .from("cip_correlativos")
-    .select("ultimo_numero")
-    .eq("carrera_id", carreraId)
-    .single()
-
-  const nuevoNumero = (correlativo?.ultimo_numero ?? 0) + 1
-  const numeroCip = String(nuevoNumero).padStart(5, "0")
-
-  if (correlativo) {
-    const { error: errUpdate } = await supabase
-      .from("cip_correlativos")
-      .update({ ultimo_numero: nuevoNumero })
-      .eq("carrera_id", carreraId)
-
-    if (errUpdate) return { error: errUpdate.message }
-  } else {
-    const { error: errInsert } = await supabase
-      .from("cip_correlativos")
-      .insert({ carrera_id: carreraId, ultimo_numero: nuevoNumero })
-
-    if (errInsert) return { error: errInsert.message }
-  }
+  if (!numeroCip) return { error: "Error al generar el número CIP" }
 
   const { data: colegiado, error: errColegiado } = await supabase
     .from("colegiados")
     .insert({
       expediente_id: expedienteId,
-      carrera_id: carreraId,
+      carrera_id: (expediente.solicitantes as unknown as { carrera_id: string }).carrera_id,
       numero_cip: numeroCip,
     })
     .select("numero_cip")
@@ -304,6 +319,10 @@ export async function aprobarPago(expedienteId: string, _formData?: FormData) {
     estado_nuevo: "Aprobado",
     comentario: `Pago aprobado. CIP: ${colegiado.numero_cip}`,
   })
+
+  await crearNotificacion(supabase, expedienteId, "colegiado",
+    "¡Felicidades, eres colegiado!",
+    `Tu colegiatura ha sido aprobada. Tu CIP es: ${colegiado.numero_cip}. Ya puedes descargar tu carnet digital.`)
 
   revalidatePath("/admin/expedientes")
   redirect("/admin/expedientes")

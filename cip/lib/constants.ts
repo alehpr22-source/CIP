@@ -15,3 +15,12 @@ export function formatDate(dateStr: string) {
     minute: "2-digit",
   })
 }
+
+const NOMBRE_MESES = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Setiembre", "Octubre", "Noviembre", "Diciembre",
+]
+
+export function nombreMes(numero: number) {
+  return NOMBRE_MESES[numero - 1] ?? `Mes ${numero}`
+}

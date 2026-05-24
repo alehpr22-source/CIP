@@ -13,6 +13,7 @@ interface Props {
   carreraNombre: string
   dni: string
   numeroCip: string
+  estadoHabilitacion?: string
 }
 
 export function Carnet({
@@ -24,8 +25,10 @@ export function Carnet({
   carreraNombre,
   dni,
   numeroCip,
+  estadoHabilitacion,
 }: Props) {
   const cardRef = useRef<HTMLDivElement>(null)
+  const inhabilitado = estadoHabilitacion === "Inhabilitado"
 
   async function handleDescargar() {
     if (!cardRef.current) return
@@ -47,6 +50,17 @@ export function Carnet({
         className="relative w-[400px] overflow-hidden rounded-xl border-2 border-yellow-600 bg-white shadow-lg"
         style={{ fontFamily: "Arial, Helvetica, sans-serif" }}
       >
+        {inhabilitado && (
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+            <div
+              className="w-[500px] -rotate-12 select-none text-center text-5xl font-black tracking-[0.3em] text-red-600 opacity-30"
+              style={{ textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}
+            >
+              INHABILITADO
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="bg-blue-900 px-6 py-3 text-center text-white">
           <p className="text-lg font-bold tracking-wide">COLEGIO DE INGENIEROS</p>

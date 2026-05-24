@@ -3,10 +3,10 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { obtenerDetalleExpediente } from "@/actions/expediente.actions"
 import { Badge } from "@/components/ui/Badge"
-import { Button } from "@/components/ui/Button"
 import { ESTADO_BADGE, formatDate } from "@/lib/constants"
 import { ExpedienteActions } from "./ExpedienteActions"
 import { ConfirmarPagoActions } from "./ConfirmarPagoActions"
+import { DocumentPreview } from "@/components/ui/DocumentPreview"
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
@@ -75,26 +75,10 @@ async function ExpedienteContent({ id }: { id: string }) {
       <section className="rounded-lg border bg-white p-6">
         <h2 className="mb-4 text-lg font-semibold text-gray-800">📄 Documentos</h2>
         <div className="flex flex-wrap gap-3">
-          {s.foto_url && (
-            <a href={`${s.foto_url}?_t=${Date.now()}`} target="_blank" rel="noopener noreferrer">
-              <Button variant="outline">📷 Foto</Button>
-            </a>
-          )}
-          {s.titulo_url && (
-            <a href={`${s.titulo_url}?_t=${Date.now()}`} target="_blank" rel="noopener noreferrer">
-              <Button variant="outline">🎓 Título</Button>
-            </a>
-          )}
-          {s.dni_url && (
-            <a href={`${s.dni_url}?_t=${Date.now()}`} target="_blank" rel="noopener noreferrer">
-              <Button variant="outline">🆔 Copia DNI</Button>
-            </a>
-          )}
-          {pago?.comprobante_url && (
-            <a href={`${pago.comprobante_url}?_t=${Date.now()}`} target="_blank" rel="noopener noreferrer">
-              <Button variant="outline">🧾 Voucher</Button>
-            </a>
-          )}
+          {s.foto_url && <DocumentPreview url={s.foto_url} label="📷 Foto" />}
+          {s.titulo_url && <DocumentPreview url={s.titulo_url} label="🎓 Título" />}
+          {s.dni_url && <DocumentPreview url={s.dni_url} label="🆔 Copia DNI" />}
+          {pago?.comprobante_url && <DocumentPreview url={pago.comprobante_url} label="🧾 Voucher" />}
         </div>
       </section>
 
@@ -110,13 +94,7 @@ async function ExpedienteContent({ id }: { id: string }) {
           {detalle.estado === "Pendiente de pago" && pago.comprobante_url && (
             <div className="mt-4">
               <p className="mb-2 text-sm font-medium text-gray-700">Voucher de pago:</p>
-              <a href={`${pago.comprobante_url}?_t=${Date.now()}`} target="_blank" rel="noopener noreferrer">
-                <img
-                  src={`${pago.comprobante_url}?_t=${Date.now()}`}
-                  alt="Voucher de pago"
-                  className="max-h-64 rounded-lg border object-contain"
-                />
-              </a>
+              <DocumentPreview url={pago.comprobante_url} label="Voucher de pago" thumbnail />
             </div>
           )}
         </section>

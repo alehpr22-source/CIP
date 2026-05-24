@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { getValidadorReniec } from "@/lib/reniec"
 import { subirArchivo } from "@/lib/supabase/storage"
@@ -12,18 +13,31 @@ export interface SolicitudInput {
   apellido_materno: string
   correo: string
   telefono: string
-  carrera_id: string
+  carrera_id: string | null
   sede_id: string
   universidad: string
+  universidad_id: string | null
+  carrera_manual: string | null
   foto_base64: string
   titulo_base64: string
   dni_base64: string
   validado_reniec: boolean
+  password: string
 }
 
 export async function validarDniConReniec(dni: string, nombres: string, apellidos: string) {
   const validador = getValidadorReniec()
   return await validador.validar({ dni, nombres, apellidos })
+}
+
+export async function verificarDniExistente(dni: string) {
+  const supabase = createClient()
+  const { data } = await supabase
+    .from("solicitantes")
+    .select("id")
+    .eq("dni", dni)
+    .maybeSingle()
+  return { existe: !!data }
 }
 
 export async function registrarSolicitud(input: SolicitudInput) {
@@ -58,6 +72,16 @@ export async function registrarSolicitud(input: SolicitudInput) {
     return { error: "Error al cargar sedes" }
   }
 
+  const { data: existente } = await supabase
+    .from("solicitantes")
+    .select("id")
+    .eq("dni", input.dni)
+    .maybeSingle()
+
+  if (existente) {
+    return { error: "El DNI ingresado ya tiene una solicitud registrada. Si olvidaste tus credenciales, usa la opción 'Olvidé mi contraseña' en el inicio de sesión." }
+  }
+
   const { data: solicitante, error: errSolicitante } = await supabase
     .from("solicitantes")
     .insert({
@@ -67,9 +91,11 @@ export async function registrarSolicitud(input: SolicitudInput) {
       apellido_materno: input.apellido_materno,
       correo: input.correo || null,
       telefono: input.telefono || null,
-      carrera_id: input.carrera_id,
+      carrera_id: input.carrera_id || null,
       sede_id: input.sede_id,
       universidad: input.universidad,
+      universidad_id: input.universidad_id || null,
+      carrera_manual: input.carrera_manual || null,
       foto_url: "",
       titulo_url: "",
       dni_url: "",
@@ -114,6 +140,22 @@ export async function registrarSolicitud(input: SolicitudInput) {
 
   if (errExpediente) {
     return { error: errExpediente.message }
+  }
+
+  if (input.correo && input.password) {
+    const adminClient = createAdminClient()
+    const { data: authUser, error: errAuth } = await adminClient.auth.admin.createUser({
+      email: input.correo,
+      password: input.password,
+      email_confirm: true,
+    })
+
+    if (!errAuth && authUser?.user.id) {
+      await adminClient
+        .from("solicitantes")
+        .update({ auth_user_id: authUser.user.id })
+        .eq("id", solicitante.id)
+    }
   }
 
   revalidatePath("/admin/expedientes")

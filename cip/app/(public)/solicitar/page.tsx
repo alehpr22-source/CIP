@@ -1,8 +1,13 @@
 import { SolicitudForm } from "./_components/SolicitudForm"
-import { obtenerCarreras, obtenerSedes } from "@/lib/carreras"
+import { obtenerCarreras, obtenerSedes, obtenerUniversidades, obtenerUniversidadCarreras } from "@/lib/carreras"
 
 export default async function SolicitarPage() {
-  const [carreras, sedes] = await Promise.all([obtenerCarreras(), obtenerSedes()])
+  const [carreras, sedes, universidades, universidadCarreras] = await Promise.all([
+    obtenerCarreras(),
+    obtenerSedes(),
+    obtenerUniversidades(),
+    obtenerUniversidadCarreras(),
+  ])
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6 lg:px-8">
@@ -15,7 +20,12 @@ export default async function SolicitarPage() {
         </p>
       </div>
 
-      <SolicitudForm carreras={carreras} sedes={sedes} />
+      <SolicitudForm
+        carreras={carreras}
+        sedes={sedes}
+        universidades={universidades}
+        universidadCarreras={universidadCarreras}
+      />
     </div>
   )
 }

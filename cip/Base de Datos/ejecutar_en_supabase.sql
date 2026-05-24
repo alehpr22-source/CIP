@@ -3,6 +3,12 @@
 -- CIP - Colegio de Ingenieros del Perú
 -- Actualizado: 24/05/2026
 -- ============================================
+--
+-- IMPORTANTE: Este script asume que las tablas base ya existen.
+-- Si es una instalación nueva, ejecutar primero el esquema del archivo esquema.txt.
+-- Luego ejecutar migracion_universidades.sql y seed_universidades.sql
+-- para agregar las tablas de universidades y sus datos.
+--
 
 -- ============================================
 -- 1. TRIGGERS

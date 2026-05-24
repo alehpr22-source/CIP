@@ -45,6 +45,7 @@ export default async function CarnetPage({ params }: Props) {
         carreraNombre={datos.carrera_nombre}
         dni={datos.dni}
         numeroCip={datos.numero_cip}
+        estadoHabilitacion={datos.estado_habilitacion}
       />
     </div>
   )

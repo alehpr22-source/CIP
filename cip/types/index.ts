@@ -11,6 +11,17 @@ export interface Sede {
   telefono?: string | null
 }
 
+export interface Universidad {
+  id: string
+  nombre: string
+  sede_id: string
+}
+
+export interface UniversidadCarrera {
+  universidad_id: string
+  carrera_id: string
+}
+
 export interface Solicitante {
   id: string
   dni: string
@@ -18,9 +29,11 @@ export interface Solicitante {
   apellidos: string
   correo?: string
   telefono?: string
-  carrera_id: string
+  carrera_id?: string | null
   sede_id: string
   universidad: string
+  universidad_id?: string | null
+  carrera_manual?: string | null
   foto_url: string
   titulo_url: string
   dni_url: string

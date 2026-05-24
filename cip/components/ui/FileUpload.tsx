@@ -1,4 +1,5 @@
 import { useRef, useState } from "react"
+import { Lightbox } from "./Lightbox"
 
 interface FileUploadProps {
   label: string
@@ -13,6 +14,7 @@ interface FileUploadProps {
 export function FileUpload({ label, accept, maxSizeMB, hint, error, preview, onChange }: FileUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragOver, setDragOver] = useState(false)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
 
   function handleFile(file: File | null) {
     if (!file) return
@@ -31,10 +33,25 @@ export function FileUpload({ label, accept, maxSizeMB, hint, error, preview, onC
         onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
         onDragLeave={() => setDragOver(false)}
         onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files[0]) }}
-        onClick={() => inputRef.current?.click()}
+        onClick={() => { if (!preview) inputRef.current?.click() }}
       >
         {preview ? (
-          <img src={preview} alt="Vista previa" className="max-h-40 rounded object-contain" />
+          <div className="flex flex-col items-center gap-3">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setLightboxOpen(true) }}
+              className="cursor-pointer transition-opacity hover:opacity-80"
+            >
+              <img src={preview} alt="Vista previa" className="max-h-40 rounded object-contain" />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); inputRef.current?.click() }}
+              className="text-xs text-blue-600 underline underline-offset-2 hover:text-blue-800"
+            >
+              Cambiar archivo
+            </button>
+          </div>
         ) : (
           <div className="text-center">
             <svg className="mx-auto h-10 w-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -55,6 +72,10 @@ export function FileUpload({ label, accept, maxSizeMB, hint, error, preview, onC
         />
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
+
+      {lightboxOpen && preview && (
+        <Lightbox src={preview} alt={label} onClose={() => setLightboxOpen(false)} />
+      )}
     </div>
   )
 }

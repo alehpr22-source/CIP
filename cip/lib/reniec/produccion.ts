@@ -30,20 +30,18 @@ export class ValidadorReniecProduccion implements ValidadorReniec {
       }).finally(() => clearTimeout(timeout))
 
       if (!res.ok) {
+        let mensaje = `Error al consultar ApiPeruDev (HTTP ${res.status})`
+        try {
+          const errBody = await res.json()
+          mensaje = errBody?.message ?? mensaje
+        } catch {}
         if (res.status === 401 || res.status === 403) {
           return { valido: false, mensaje: "Token invalido o sin permisos en ApiPeruDev" }
         }
         if (res.status === 429) {
           return { valido: false, mensaje: "Limite de consultas alcanzado en ApiPeruDev" }
         }
-        if (res.status === 404) {
-          return { valido: false, mensaje: `El DNI ${request.dni} no fue encontrado` }
-        }
-        if (res.status >= 500) {
-          return { valido: false, mensaje: "ApiPeruDev no disponible temporalmente" }
-        }
-
-        return { valido: false, mensaje: "Error al consultar ApiPeruDev" }
+        return { valido: false, mensaje }
       }
 
       const payload = await res.json()

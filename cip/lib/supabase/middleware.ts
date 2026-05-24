@@ -4,7 +4,14 @@ import { NextResponse, type NextRequest } from "next/server"
 export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  if (pathname === "/admin/login") {
+  const isAdminRoute = pathname.startsWith("/admin")
+  const isUserRoute = pathname.startsWith("/micuenta")
+
+  if (isAdminRoute && pathname === "/admin/login") {
+    return NextResponse.next({ request })
+  }
+
+  if (isUserRoute && pathname === "/micuenta/login") {
     return NextResponse.next({ request })
   }
 
@@ -30,20 +37,41 @@ export async function updateSession(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.redirect(new URL("/admin/login", request.url))
+    if (isAdminRoute) {
+      return NextResponse.redirect(new URL("/admin/login", request.url))
+    }
+    if (isUserRoute) {
+      return NextResponse.redirect(new URL("/login", request.url))
+    }
+    return supabaseResponse
   }
 
-  const { data: admin } = await supabase
-    .from("usuarios_admin")
-    .select("id")
-    .eq("auth_user_id", user.id)
-    .single()
+  if (isAdminRoute) {
+    const { data: admin } = await supabase
+      .from("usuarios_admin")
+      .select("id")
+      .eq("auth_user_id", user.id)
+      .single()
 
-  if (!admin) {
-    await supabase.auth.signOut()
-    const url = new URL("/admin/login", request.url)
-    url.searchParams.set("error", "no_autorizado")
-    return NextResponse.redirect(url)
+    if (!admin) {
+      await supabase.auth.signOut()
+      const url = new URL("/admin/login", request.url)
+      url.searchParams.set("error", "no_autorizado")
+      return NextResponse.redirect(url)
+    }
+  }
+
+  if (isUserRoute) {
+    const { data: solicitante } = await supabase
+      .from("solicitantes")
+      .select("id")
+      .eq("auth_user_id", user.id)
+      .single()
+
+    if (!solicitante) {
+      await supabase.auth.signOut()
+      return NextResponse.redirect(new URL("/login", request.url))
+    }
   }
 
   return supabaseResponse

@@ -36,6 +36,12 @@ export function PublicNavbar() {
           >
             Consultar Tr&aacute;mite
           </Link>
+          <Link
+            href="/login"
+            className="rounded-lg border border-cip-red px-4 py-2 text-sm font-medium text-cip-red transition-colors hover:bg-cip-red hover:text-white"
+          >
+            Iniciar sesi&oacute;n
+          </Link>
         </div>
       </div>
     </nav>

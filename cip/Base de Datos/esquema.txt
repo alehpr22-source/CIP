@@ -4,6 +4,9 @@
 -- Generado: 24/05/2026
 -- ============================================
 
+-- NOTA: Las tablas universidades y universidad_carreras se definen en
+-- migracion_universidades.sql. Ver ese archivo para el DDL completo.
+
 -- 1. CARRERAS
 create table if not exists public.carreras (
   id uuid not null default gen_random_uuid(),
@@ -152,4 +155,22 @@ create table if not exists public.cip_correlativos (
   constraint cip_correlativos_pkey primary key (id),
   constraint cip_correlativos_carrera_id_fkey foreign key (carrera_id) references public.carreras (id),
   constraint cip_correlativos_carrera_id_key unique (carrera_id)
+);
+
+-- 11. UNIVERSIDADES (Agregado 24/05/2026)
+create table if not exists public.universidades (
+  id uuid not null default gen_random_uuid(),
+  nombre varchar(255) not null,
+  sede_id uuid not null,
+  constraint universidades_pkey primary key (id),
+  constraint universidades_sede_id_fkey foreign key (sede_id) references public.sedes (id)
+);
+
+-- 12. UNIVERSIDAD_CARRERAS (Agregado 24/05/2026)
+create table if not exists public.universidad_carreras (
+  universidad_id uuid not null,
+  carrera_id uuid not null,
+  constraint universidad_carreras_pkey primary key (universidad_id, carrera_id),
+  constraint universidad_carreras_universidad_id_fkey foreign key (universidad_id) references public.universidades (id),
+  constraint universidad_carreras_carrera_id_fkey foreign key (carrera_id) references public.carreras (id)
 );

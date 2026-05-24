@@ -2,14 +2,27 @@ import Link from "next/link"
 import { createAuthClient } from "@/lib/supabase/auth-server"
 import { logoutAdmin } from "@/actions/auth.actions"
 
-const links = [
-  { href: "/admin/expedientes", label: "Expedientes" },
-  { href: "/admin/colegiados", label: "Colegiados" },
-]
-
 export async function AdminHeader() {
   const supabase = await createAuthClient()
   const { data: { user } } = await supabase.auth.getUser()
+
+  const { data: admin } = await supabase
+    .from("usuarios_admin")
+    .select("rol")
+    .eq("auth_user_id", user?.id)
+    .single()
+
+  const rol = admin?.rol ?? ""
+
+  const links = []
+
+  if (rol === "SuperAdmin" || rol === "Revisor" || rol === "Tesoreria") {
+    links.push({ href: "/admin/expedientes", label: "Expedientes" })
+  }
+
+  if (rol === "SuperAdmin") {
+    links.push({ href: "/admin/colegiados", label: "Colegiados" })
+  }
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-6">
@@ -19,6 +32,9 @@ export async function AdminHeader() {
             CIP
           </div>
           <span className="text-sm font-semibold text-gray-900">Admin</span>
+          <span className="rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+            {rol}
+          </span>
         </div>
 
         <nav className="flex items-center gap-1">

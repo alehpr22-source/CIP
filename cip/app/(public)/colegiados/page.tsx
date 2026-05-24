@@ -65,7 +65,8 @@ export default function ColegiadosPublicPage() {
               name="dni"
               placeholder="12345678"
               value={dni}
-              onChange={(e) => setDni(e.target.value)}
+              maxLength={8}
+              onChange={(e) => setDni(e.target.value.replace(/\D/g, ""))}
               required
             />
           </div>
@@ -101,7 +102,7 @@ export default function ColegiadosPublicPage() {
           </div>
         )}
 
-        <Button type="submit" disabled={loading}>
+        <Button type="submit" disabled={loading || (tipoBusqueda === "dni" && dni.length !== 8)}>
           {loading ? "Buscando..." : "Consultar"}
         </Button>
       </form>
