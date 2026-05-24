@@ -76,22 +76,22 @@ async function ExpedienteContent({ id }: { id: string }) {
         <h2 className="mb-4 text-lg font-semibold text-gray-800">📄 Documentos</h2>
         <div className="flex flex-wrap gap-3">
           {s.foto_url && (
-            <a href={s.foto_url} target="_blank" rel="noopener noreferrer">
+            <a href={`${s.foto_url}?_t=${Date.now()}`} target="_blank" rel="noopener noreferrer">
               <Button variant="outline">📷 Foto</Button>
             </a>
           )}
           {s.titulo_url && (
-            <a href={s.titulo_url} target="_blank" rel="noopener noreferrer">
+            <a href={`${s.titulo_url}?_t=${Date.now()}`} target="_blank" rel="noopener noreferrer">
               <Button variant="outline">🎓 Título</Button>
             </a>
           )}
           {s.dni_url && (
-            <a href={s.dni_url} target="_blank" rel="noopener noreferrer">
+            <a href={`${s.dni_url}?_t=${Date.now()}`} target="_blank" rel="noopener noreferrer">
               <Button variant="outline">🆔 Copia DNI</Button>
             </a>
           )}
           {pago?.comprobante_url && (
-            <a href={pago.comprobante_url} target="_blank" rel="noopener noreferrer">
+            <a href={`${pago.comprobante_url}?_t=${Date.now()}`} target="_blank" rel="noopener noreferrer">
               <Button variant="outline">🧾 Voucher</Button>
             </a>
           )}
@@ -110,9 +110,9 @@ async function ExpedienteContent({ id }: { id: string }) {
           {detalle.estado === "Pendiente de pago" && pago.comprobante_url && (
             <div className="mt-4">
               <p className="mb-2 text-sm font-medium text-gray-700">Voucher de pago:</p>
-              <a href={pago.comprobante_url} target="_blank" rel="noopener noreferrer">
+              <a href={`${pago.comprobante_url}?_t=${Date.now()}`} target="_blank" rel="noopener noreferrer">
                 <img
-                  src={pago.comprobante_url}
+                  src={`${pago.comprobante_url}?_t=${Date.now()}`}
                   alt="Voucher de pago"
                   className="max-h-64 rounded-lg border object-contain"
                 />

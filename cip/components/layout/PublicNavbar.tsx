@@ -13,6 +13,12 @@ export function PublicNavbar() {
 
         <div className="flex items-center gap-4">
           <Link
+            href="/sedes"
+            className="text-sm font-medium text-gray-600 transition-colors hover:text-gray-900"
+          >
+            Sedes
+          </Link>
+          <Link
             href="/solicitar"
             className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-800"
           >

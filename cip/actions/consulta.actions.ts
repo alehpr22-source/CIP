@@ -50,14 +50,22 @@ export async function consultarExpediente(dni: string, correo: string) {
 
   if (!expediente) {
     return {
-      solicitante,
+      solicitante: {
+        id: solicitante.id, dni: solicitante.dni,
+        nombres: solicitante.nombres, apellido_paterno: solicitante.apellido_paterno,
+        apellido_materno: solicitante.apellido_materno,
+        carrera_id: solicitante.carrera_id, sede_id: solicitante.sede_id,
+        universidad: solicitante.universidad,
+        foto_url: solicitante.foto_url, titulo_url: solicitante.titulo_url, dni_url: solicitante.dni_url,
+        carrera_nombre: "", sede_nombre: "",
+      },
       expediente: null,
       colegiado: null,
       pago: null,
     }
   }
 
-  const { data: colegiado } = await supabase
+  const { data: colegiadoRaw } = await supabase
     .from("colegiados")
     .select(`
       id,
@@ -68,7 +76,7 @@ export async function consultarExpediente(dni: string, correo: string) {
     .eq("expediente_id", expediente.id)
     .single()
 
-  const { data: pago } = await supabase
+  const { data: pagoRaw } = await supabase
     .from("pagos_inscripcion")
     .select(`
       id,
@@ -88,15 +96,42 @@ export async function consultarExpediente(dni: string, correo: string) {
   const carrera = carreras.data?.find((c) => c.id === solicitante.carrera_id)
   const sede = sedes.data?.find((s) => s.id === solicitante.sede_id)
 
+  const colegiado = colegiadoRaw ? {
+    id: colegiadoRaw.id,
+    numero_cip: colegiadoRaw.numero_cip,
+    estado_habilitacion: colegiadoRaw.estado_habilitacion,
+    fecha_colegiatura: colegiadoRaw.fecha_colegiatura,
+  } : null
+
+  const pago = pagoRaw ? {
+    id: pagoRaw.id,
+    monto: pagoRaw.monto,
+    estado: pagoRaw.estado,
+    tipo_pago: pagoRaw.tipo_pago,
+    comprobante_url: pagoRaw.comprobante_url,
+  } : null
+
   return {
     solicitante: {
-      ...solicitante,
+      id: solicitante.id, dni: solicitante.dni,
+      nombres: solicitante.nombres, apellido_paterno: solicitante.apellido_paterno,
+      apellido_materno: solicitante.apellido_materno,
+      carrera_id: solicitante.carrera_id, sede_id: solicitante.sede_id,
+      universidad: solicitante.universidad,
+      foto_url: solicitante.foto_url, titulo_url: solicitante.titulo_url, dni_url: solicitante.dni_url,
       carrera_nombre: carrera?.nombre ?? "-",
       sede_nombre: sede?.nombre ?? "-",
     },
-    expediente: expediente ?? null,
-    colegiado: colegiado ?? null,
-    pago: pago ?? null,
+    expediente: {
+      id: expediente.id,
+      codigo_expediente: expediente.codigo_expediente,
+      estado: expediente.estado,
+      observaciones: expediente.observaciones,
+      fecha_revision: expediente.fecha_revision,
+      created_at: expediente.created_at,
+    },
+    colegiado,
+    pago,
   }
 }
 

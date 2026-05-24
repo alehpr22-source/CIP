@@ -3,19 +3,19 @@ import { Carnet } from "@/components/carnet/Carnet"
 import Link from "next/link"
 
 interface Props {
-  params: Promise<{ cip: string }>
+  params: Promise<{ dni: string }>
 }
 
 export default async function CarnetPage({ params }: Props) {
-  const { cip } = await params
-  const datos = await obtenerDatosCarnet(cip)
+  const { dni } = await params
+  const datos = await obtenerDatosCarnet(dni)
 
   if (!datos) {
     return (
       <div className="mx-auto max-w-lg px-4 py-12 text-center">
         <h1 className="mb-4 text-2xl font-bold text-gray-800">Carnet no encontrado</h1>
         <p className="mb-6 text-sm text-gray-500">
-          No se encontró un colegiado con el CIP <strong>{cip}</strong>.
+          No se encontró un colegiado con el DNI <strong>{dni}</strong>.
         </p>
         <Link
           href="/consulta"

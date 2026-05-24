@@ -11,8 +11,9 @@ import { PagoForm } from "./PagoForm"
 
 function DocLink({ url, label }: { url: string; label: string }) {
   if (!url) return <span className="text-sm text-gray-400">No subido</span>
+  const cacheUrl = `${url}${url.includes("?") ? "&" : "?"}_t=${Date.now()}`
   return (
-    <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:text-blue-800 underline">
+    <a href={cacheUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:text-blue-800 underline">
       {label}
     </a>
   )
@@ -162,7 +163,7 @@ async function Resultado({ dni, correo }: { dni: string; correo: string }) {
               <div className="rounded-lg border bg-white p-6 text-sm">
                 <div className="mb-3">
                   <span className="font-medium text-gray-500">CIP:</span>{" "}
-                  <Link href={`/carnet/${colegiado.numero_cip}`} className="font-mono text-lg font-bold text-blue-700 hover:text-blue-900 underline">
+                  <Link href={`/carnet/${solicitante.dni}`} className="font-mono text-lg font-bold text-blue-700 hover:text-blue-900 underline">
                     {colegiado.numero_cip}
                   </Link>
                 </div>

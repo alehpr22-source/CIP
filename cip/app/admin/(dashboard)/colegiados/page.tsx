@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/Badge"
 import { Select } from "@/components/ui/Select"
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
+import { createClient } from "@/lib/supabase/server"
 import Link from "next/link"
 
 const estadoOpciones = [
@@ -26,8 +27,8 @@ function formatDate(dateStr: string) {
   })
 }
 
-async function ColegiadosTable({ busqueda, estado_habilitacion }: FiltrosColegiados) {
-  const result = await listarColegiados({ busqueda, estado_habilitacion })
+async function ColegiadosTable(filtros: FiltrosColegiados) {
+  const result = await listarColegiados(filtros)
 
   if (result.error) {
     return <p className="py-8 text-center text-sm text-red-600">Error: {result.error}</p>
@@ -43,7 +44,7 @@ async function ColegiadosTable({ busqueda, estado_habilitacion }: FiltrosColegia
           header: "CIP",
           render: (item) => (
             <Link
-              href={`/carnet/${item.numero_cip}`}
+              href={`/carnet/${item.dni}`}
               className="font-medium text-blue-600 hover:text-blue-800"
             >
               {item.numero_cip}
@@ -93,9 +94,31 @@ async function ColegiadosTable({ busqueda, estado_habilitacion }: FiltrosColegia
 }
 
 export default async function ColegiadosPage(props: {
-  searchParams: Promise<{ estado_habilitacion?: string; busqueda?: string }>
+  searchParams: Promise<{ estado_habilitacion?: string; carrera_id?: string; sede_id?: string; busqueda?: string }>
 }) {
-  const { estado_habilitacion, busqueda } = await props.searchParams
+  const { estado_habilitacion, carrera_id, sede_id, busqueda } = await props.searchParams
+
+  const supabase = createClient()
+  const [carrerasData, sedesData] = await Promise.all([
+    supabase.from("carreras").select("id, codigo, nombre").order("nombre"),
+    supabase.from("sedes").select("id, nombre").order("nombre"),
+  ])
+
+  const carreraOpciones = [
+    { value: "", label: "Todas" },
+    ...(carrerasData.data ?? []).map((c) => ({
+      value: c.id,
+      label: `${c.codigo} - ${c.nombre}`,
+    })),
+  ]
+
+  const sedeOpciones = [
+    { value: "", label: "Todas" },
+    ...(sedesData.data ?? []).map((s) => ({
+      value: s.id,
+      label: s.nombre,
+    })),
+  ]
 
   return (
     <div className="space-y-6">
@@ -113,6 +136,22 @@ export default async function ColegiadosPage(props: {
             defaultValue={estado_habilitacion ?? ""}
           />
         </div>
+        <div className="w-52">
+          <Select
+            label="Carrera"
+            name="carrera_id"
+            options={carreraOpciones}
+            defaultValue={carrera_id ?? ""}
+          />
+        </div>
+        <div className="w-48">
+          <Select
+            label="Sede"
+            name="sede_id"
+            options={sedeOpciones}
+            defaultValue={sede_id ?? ""}
+          />
+        </div>
         <div className="w-64">
           <Input
             label="Buscar"
@@ -125,7 +164,12 @@ export default async function ColegiadosPage(props: {
       </form>
 
       <Suspense fallback={<p className="py-8 text-center text-sm text-gray-500">Cargando...</p>}>
-        <ColegiadosTable busqueda={busqueda} estado_habilitacion={estado_habilitacion} />
+        <ColegiadosTable
+          busqueda={busqueda}
+          estado_habilitacion={estado_habilitacion}
+          carrera_id={carrera_id}
+          sede_id={sede_id}
+        />
       </Suspense>
     </div>
   )

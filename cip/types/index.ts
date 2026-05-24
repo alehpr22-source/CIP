@@ -7,7 +7,8 @@ export interface Carrera {
 export interface Sede {
   id: string
   nombre: string
-  direccion?: string
+  direccion?: string | null
+  telefono?: string | null
 }
 
 export interface Solicitante {
