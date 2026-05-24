@@ -1,7 +1,7 @@
 -- ============================================
 -- ESQUEMA DE BASE DE DATOS - CIP
 -- Sistema de Colegiatura - Colegio de Ingenieros del Perú
--- Generado: 23/05/2026
+-- Generado: 24/05/2026
 -- ============================================
 
 -- 1. CARRERAS
@@ -89,9 +89,12 @@ create table if not exists public.colegiados (
   constraint colegiados_pkey primary key (id),
   constraint colegiados_expediente_id_fkey foreign key (expediente_id) references public.expedientes (id),
   constraint colegiados_carrera_id_fkey foreign key (carrera_id) references public.carreras (id),
-  constraint colegiados_numero_cip_key unique (numero_cip),
   constraint colegiados_estado_check check (estado_habilitacion in ('Habilitado', 'Inhabilitado'))
 );
+
+-- Índice único compuesto: mismo CIP permitido en distintas carreras
+create unique index if not exists colegiados_carrera_cip_unique
+  on public.colegiados (carrera_id, numero_cip);
 
 -- 7. USUARIOS ADMIN
 create table if not exists public.usuarios_admin (

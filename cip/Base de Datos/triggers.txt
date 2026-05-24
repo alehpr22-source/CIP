@@ -1,7 +1,7 @@
 -- ============================================
 -- TRIGGERS - CIP
 -- Sistema de Colegiatura - Colegio de Ingenieros del Perú
--- Generado: 23/05/2026
+-- Generado: 24/05/2026
 -- ============================================
 
 -- ============================================
@@ -61,10 +61,11 @@ create trigger inicializar_correlativo_carrera
 
 
 -- ============================================
--- TRIGGER 3: generar_numero_cip [DEPRECADO]
--- Este trigger fue reemplazado por lógica en Server Action (actions/expediente.actions.ts → aprobarPago)
--- El CIP se genera manualmente en el código de la aplicación para evitar problemas con RLS en Supabase.
--- Si deseas eliminar el trigger y la función:
+-- TRIGGER 3: generar_numero_cip [ELIMINADO]
+-- Este trigger fue eliminado porque el CIP ahora se genera en
+-- Server Action (actions/expediente.actions.ts → aprobarPago)
+-- Motivo: evitar problemas con RLS en Supabase al insertar desde anónimo.
+-- Para limpiar en Supabase:
 --   drop trigger if exists generar_numero_cip on public.colegiados;
 --   drop function if exists public.fn_generar_numero_cip();
 

@@ -45,42 +45,42 @@ const pasos = [
 
 export function ProcessSection() {
   return (
-    <section className="border-t border-gray-200 bg-gray-50">
+    <section className="bg-cip-gray">
       <div className="mx-auto max-w-5xl px-4 py-20 sm:px-6 lg:px-8">
-        <h2 className="mb-4 text-center text-3xl font-bold text-gray-900">
-          ¿Cómo funciona el proceso?
+        <h2 className="mb-4 text-center text-3xl font-bold text-cip-dark">
+          ¿C&oacute;mo funciona el proceso?
         </h2>
         <p className="mx-auto mb-16 max-w-xl text-center text-gray-500">
-          Solicitar la colegiatura es sencillo. Sigue estos tres pasos y obtén tu número CIP.
+          Solicitar la colegiatura es sencillo. Sigue estos tres pasos y obt&eacute;n tu n&uacute;mero CIP.
         </p>
 
         <div className="relative space-y-12 md:space-y-0 md:grid md:grid-cols-3 md:gap-8">
           {/* Línea conectora horizontal (solo desktop) */}
-          <div className="absolute left-1/2 top-16 hidden h-0.5 w-2/3 -translate-x-1/2 bg-blue-200 md:block" />
+          <div className="absolute left-1/2 top-16 hidden h-0.5 w-2/3 -translate-x-1/2 bg-cip-gold/60 md:block" />
 
           {pasos.map((paso, i) => (
             <div key={paso.numero} className="relative">
               {/* Círculo numerado */}
-              <div className="relative z-10 mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-blue-700 text-2xl shadow-md">
+              <div className="relative z-10 mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-cip-red text-2xl shadow-md">
                 <span className="text-white">{paso.icono}</span>
               </div>
 
               {/* Card */}
               <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
                 <div className="mb-1 flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-blue-600">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-cip-red">
                     Paso {paso.numero}
                   </span>
                   <span className="text-xs text-gray-400">{paso.tiempo}</span>
                 </div>
 
-                <h3 className="mb-1 text-lg font-semibold text-gray-900">{paso.titulo}</h3>
+                <h3 className="mb-1 text-lg font-semibold text-cip-dark">{paso.titulo}</h3>
                 <p className="mb-4 text-sm text-gray-500">{paso.descripcion}</p>
 
                 <ul className="space-y-2">
                   {paso.detalles.map((detalle, j) => (
                     <li key={j} className="flex items-start gap-2 text-sm text-gray-600">
-                      <span className="mt-0.5 shrink-0 text-green-500">✓</span>
+                      <span className="mt-0.5 shrink-0 text-cip-red">✓</span>
                       <span>{detalle}</span>
                     </li>
                   ))}
@@ -96,9 +96,9 @@ export function ProcessSection() {
         </div>
 
         {/* Nota final */}
-        <div className="mx-auto mt-16 max-w-xl rounded-lg border border-blue-200 bg-blue-50 p-4 text-center text-sm text-blue-700">
-          💡 ¿Tienes dudas? Puedes consultar el estado de tu trámite en cualquier momento desde la
-          página de Consulta con tu DNI y correo electrónico.
+        <div className="mx-auto mt-16 max-w-xl rounded-lg border-2 border-cip-red/20 bg-cip-red-light p-4 text-center text-sm text-cip-red-dark">
+          💡 ¿Tienes dudas? Puedes consultar el estado de tu tr&aacute;mite en cualquier momento desde la
+          p&aacute;gina de Consulta con tu DNI y correo electr&oacute;nico.
         </div>
       </div>
     </section>

@@ -157,3 +157,107 @@ export async function listarColegiados(filtros: FiltrosColegiados = {}) {
   return { data: result, error: null }
 }
 
+export interface ResultadoColegiadoPublico {
+  numero_cip: string
+  dni: string
+  nombres: string
+  apellido_paterno: string
+  apellido_materno: string
+  carrera_nombre: string
+  sede_nombre: string
+  estado_habilitacion: string
+}
+
+export async function buscarColegiadosPublico(filtros: {
+  tipo: "dni"
+  dni: string
+} | {
+  tipo: "nombres"
+  apellido_paterno: string
+  apellido_materno: string
+  nombres: string
+}) {
+  const supabase = createClient()
+
+  let solicitantesQuery = supabase
+    .from("solicitantes")
+    .select("id, dni, nombres, apellido_paterno, apellido_materno, carrera_id, sede_id")
+
+  if (filtros.tipo === "dni") {
+    solicitantesQuery = solicitantesQuery.eq("dni", filtros.dni)
+  } else {
+    if (filtros.apellido_paterno) {
+      solicitantesQuery = solicitantesQuery.ilike("apellido_paterno", `%${filtros.apellido_paterno}%`)
+    }
+    if (filtros.apellido_materno) {
+      solicitantesQuery = solicitantesQuery.ilike("apellido_materno", `%${filtros.apellido_materno}%`)
+    }
+    if (filtros.nombres) {
+      solicitantesQuery = solicitantesQuery.ilike("nombres", `%${filtros.nombres}%`)
+    }
+  }
+
+  const { data: solicitantes, error: errSol } = await solicitantesQuery
+
+  if (errSol || !solicitantes || solicitantes.length === 0) {
+    return { data: [] }
+  }
+
+  const solicitanteIds = solicitantes.map((s) => s.id)
+
+  const { data: expedientes } = await supabase
+    .from("expedientes")
+    .select("id, solicitante_id")
+    .in("solicitante_id", solicitanteIds)
+
+  const expedienteMap = new Map((expedientes ?? []).map((e) => [e.solicitante_id, e.id]))
+  const expedienteIds = (expedientes ?? []).map((e) => e.id)
+
+  if (expedienteIds.length === 0) {
+    return { data: [] }
+  }
+
+  const { data: colegiados } = await supabase
+    .from("colegiados")
+    .select("id, numero_cip, estado_habilitacion, expediente_id")
+    .in("expediente_id", expedienteIds)
+
+  if (!colegiados || colegiados.length === 0) {
+    return { data: [] }
+  }
+
+  const carreraIds = [...new Set(solicitantes.map((s) => s.carrera_id))]
+  const sedeIds = [...new Set(solicitantes.map((s) => s.sede_id))]
+
+  const [carrerasData, sedesData] = await Promise.all([
+    supabase.from("carreras").select("id, nombre").in("id", carreraIds),
+    supabase.from("sedes").select("id, nombre").in("id", sedeIds),
+  ])
+
+  const carreraMap = new Map((carrerasData.data ?? []).map((c) => [c.id, c.nombre]))
+  const sedeMap = new Map((sedesData.data ?? []).map((s) => [s.id, s.nombre]))
+
+  const resultado: ResultadoColegiadoPublico[] = []
+
+  for (const col of colegiados) {
+    const exp = expedientes?.find((e) => e.id === col.expediente_id)
+    if (!exp) continue
+
+    const sol = solicitantes.find((s) => s.id === exp.solicitante_id)
+    if (!sol) continue
+
+    resultado.push({
+      numero_cip: col.numero_cip,
+      dni: sol.dni,
+      nombres: sol.nombres,
+      apellido_paterno: sol.apellido_paterno,
+      apellido_materno: sol.apellido_materno,
+      carrera_nombre: carreraMap.get(sol.carrera_id) ?? "",
+      sede_nombre: sedeMap.get(sol.sede_id) ?? "",
+      estado_habilitacion: col.estado_habilitacion,
+    })
+  }
+
+  return { data: resultado }
+}
+

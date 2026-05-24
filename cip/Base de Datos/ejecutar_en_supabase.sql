@@ -1,6 +1,7 @@
 -- ============================================
 -- SCRIPT COMPLETO - Ejecutar en Supabase SQL Editor
 -- CIP - Colegio de Ingenieros del Perú
+-- Actualizado: 24/05/2026
 -- ============================================
 
 -- ============================================
@@ -171,3 +172,14 @@ alter table public.solicitantes
 
 alter table public.solicitantes
   drop column apellidos;
+
+
+-- ============================================
+-- 6. ELIMINAR UNIQUE DE numero_cip Y CREAR ÍNDICE COMPUESTO
+-- ============================================
+
+alter table public.colegiados
+  drop constraint if exists colegiados_numero_cip_key;
+
+create unique index if not exists colegiados_carrera_cip_unique
+  on public.colegiados (carrera_id, numero_cip);

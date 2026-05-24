@@ -1,7 +1,7 @@
 -- ============================================
 -- POLÍTICAS RLS (ROW LEVEL SECURITY) - CIP
 -- Sistema de Colegiatura - Colegio de Ingenieros del Perú
--- Generado: 23/05/2026
+-- Generado: 24/05/2026
 -- ============================================
 
 -- ============================================

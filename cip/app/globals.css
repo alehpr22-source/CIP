@@ -2,7 +2,7 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #2A2A29;
 }
 
 @theme inline {
@@ -10,13 +10,15 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-cip-red: #E31E24;
+  --color-cip-red-dark: #B0151A;
+  --color-cip-red-light: #FDE8E8;
+  --color-cip-gold: #C9A84C;
+  --color-cip-gold-dark: #B8922E;
+  --color-cip-gold-light: #F5EDD6;
+  --color-cip-dark: #2A2A29;
+  --color-cip-gray: #F5F5F5;
 }
 
 body {
