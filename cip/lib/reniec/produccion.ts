@@ -10,44 +10,87 @@ export class ValidadorReniecProduccion implements ValidadorReniec {
   }
 
   async validar(request: ReniecRequest): Promise<ReniecResponse> {
+    if (!this.apiUrl || !this.apiKey) {
+      return { valido: false, mensaje: "Configuracion RENIEC incompleta" }
+    }
+
     try {
-      const res = await fetch(`${this.apiUrl}/consulta`, {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 10000)
+
+      const res = await fetch(this.apiUrl, {
         method: "POST",
         headers: {
+          Accept: "application/json",
           "Content-Type": "application/json",
           Authorization: `Bearer ${this.apiKey}`,
         },
         body: JSON.stringify({ dni: request.dni }),
-      })
+        signal: controller.signal,
+      }).finally(() => clearTimeout(timeout))
 
       if (!res.ok) {
-        return { valido: false, mensaje: "Error al consultar RENIEC" }
+        if (res.status === 401 || res.status === 403) {
+          return { valido: false, mensaje: "Token invalido o sin permisos en ApiPeruDev" }
+        }
+        if (res.status === 429) {
+          return { valido: false, mensaje: "Limite de consultas alcanzado en ApiPeruDev" }
+        }
+        if (res.status === 404) {
+          return { valido: false, mensaje: `El DNI ${request.dni} no fue encontrado` }
+        }
+        if (res.status >= 500) {
+          return { valido: false, mensaje: "ApiPeruDev no disponible temporalmente" }
+        }
+
+        return { valido: false, mensaje: "Error al consultar ApiPeruDev" }
       }
 
-      const data = await res.json()
+      const payload = await res.json()
+      const data = payload?.data
 
-      const nomNorm = request.nombres.toUpperCase().trim()
-      const apeNorm = request.apellidos.toUpperCase().trim()
-      const reniecNombres = (data.nombres ?? "").toUpperCase().trim()
-      const reniecApellidos = (data.apellidos ?? "").toUpperCase().trim()
+      const nombresApi = normalize(data?.nombres)
+      const apellidosApi = normalize(`${data?.apellido_paterno ?? ""} ${data?.apellido_materno ?? ""}`)
 
-      if (nomNorm !== reniecNombres || apeNorm !== reniecApellidos) {
+      if (!nombresApi && !apellidosApi) {
+        return { valido: false, mensaje: `No se obtuvo informacion para el DNI ${request.dni}` }
+      }
+
+      const nomNorm = normalize(request.nombres)
+      const apeNorm = normalize(request.apellidos)
+      const coincideNombres = !nomNorm || !nombresApi || nomNorm === nombresApi
+      const coincideApellidos = !apeNorm || !apellidosApi || apeNorm === apellidosApi
+
+      if (!coincideNombres || !coincideApellidos) {
         return {
-          valido: false,
-          nombres: data.nombres,
-          apellidos: data.apellidos,
-          mensaje: "Los nombres no coinciden con RENIEC",
+          valido: true,
+          nombres: data?.nombres,
+          apellidos: `${data?.apellido_paterno ?? ""} ${data?.apellido_materno ?? ""}`.trim(),
+          mensaje: "DNI valido, pero hay diferencias con los nombres/apellidos ingresados",
         }
       }
 
       return {
         valido: true,
-        nombres: data.nombres,
-        apellidos: data.apellidos,
+        nombres: data?.nombres,
+        apellidos: `${data?.apellido_paterno ?? ""} ${data?.apellido_materno ?? ""}`.trim(),
         mensaje: "Identidad verificada correctamente",
       }
-    } catch {
-      return { valido: false, mensaje: "Error de conexión con RENIEC" }
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        return { valido: false, mensaje: "Tiempo de espera agotado al consultar ApiPeruDev" }
+      }
+
+      return { valido: false, mensaje: "Error de conexion con ApiPeruDev" }
     }
   }
+}
+
+function normalize(value: string): string {
+  return value
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
 }
