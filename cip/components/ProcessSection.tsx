@@ -1,7 +1,9 @@
+import { ClipboardList, FileSearch, CreditCard, Check, Lightbulb } from "lucide-react"
+
 const pasos = [
   {
     numero: "1",
-    icono: "📝",
+    icono: <ClipboardList className="h-6 w-6" />,
     titulo: "Solicitar colegiatura",
     descripcion: "Completa el formulario de registro y sube tus documentos en formato digital.",
     detalles: [
@@ -15,37 +17,38 @@ const pasos = [
   },
   {
     numero: "2",
-    icono: "✅",
+    icono: <FileSearch className="h-6 w-6" />,
     titulo: "Revisión y pago",
     descripcion: "El comité de admisión evalúa tu expediente. Si todo está en orden, procedes al pago.",
     detalles: [
       "Un administrador revisa tus datos y documentos",
-      "Si faltara algo, el expediente se marca como Observado",
+      "Si falta algo, el expediente se marca como Observado",
       "Corrige lo observado y vuelve a enviar",
-      "Una vez aprobado, genera tu voucher de pago (S/ 1,500)",
-      "El administrador confirma el pago y activa tu colegiatura",
+      "Si todo está bien, pasa a Pendiente de pago",
+      "Genera tu voucher de S/ 1,500 y súbelo desde Consulta",
+      "El administrador confirma el pago y se genera tu CIP automáticamente",
     ],
     tiempo: "~2 a 5 días hábiles",
   },
   {
     numero: "3",
-    icono: "🪪",
-    titulo: "Obtén tu CIP",
-    descripcion: "¡Felicidades! Ya eres colegiado. Accede a tu carnet digital y descárgalo.",
+    icono: <CreditCard className="h-6 w-6" />,
+    titulo: "Vida colegiada",
+    descripcion: "¡Felicidades! Ya eres colegiado. Accede a tu carnet digital y mantén tu membresía al día.",
     detalles: [
-      "Se genera tu número CIP único",
-      "Tu expediente queda como Aprobado",
-      "Visualiza tu carnet digital con foto y datos",
-      "Descarga el carnet en formato PNG",
-      "El carnet incluye código de verificación",
+      "Recibes tu número CIP único",
+      "Visualiza y descarga tu carnet digital en formato PNG",
+      "Cuota mensual de S/ 20 para mantener tu estado Habilitado",
+      "Si tienes pagos pendientes, pasas automáticamente a Inhabilitado",
+      "Puedes ponerte al día en cualquier momento",
     ],
-    tiempo: "Inmediato",
+    tiempo: "Mensual",
   },
 ]
 
 export function ProcessSection() {
   return (
-    <section className="bg-cip-gray">
+    <section>
       <div className="mx-auto max-w-5xl px-4 py-20 sm:px-6 lg:px-8">
         <h2 className="mb-4 text-center text-3xl font-bold text-cip-dark">
           ¿C&oacute;mo funciona el proceso?
@@ -56,13 +59,13 @@ export function ProcessSection() {
 
         <div className="relative space-y-12 md:space-y-0 md:grid md:grid-cols-3 md:gap-8">
           {/* Línea conectora horizontal (solo desktop) */}
-          <div className="absolute left-1/2 top-16 hidden h-0.5 w-2/3 -translate-x-1/2 bg-cip-gold/60 md:block" />
+          <div className="absolute left-1/2 top-16 hidden h-1 w-2/3 -translate-x-1/2 bg-cip-gold md:block" />
 
           {pasos.map((paso, i) => (
             <div key={paso.numero} className="relative">
               {/* Círculo numerado */}
-              <div className="relative z-10 mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-cip-red text-2xl shadow-md">
-                <span className="text-white">{paso.icono}</span>
+              <div className="relative z-10 mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-cip-red text-white shadow-md">
+                {paso.icono}
               </div>
 
               {/* Card */}
@@ -80,7 +83,7 @@ export function ProcessSection() {
                 <ul className="space-y-2">
                   {paso.detalles.map((detalle, j) => (
                     <li key={j} className="flex items-start gap-2 text-sm text-gray-600">
-                      <span className="mt-0.5 shrink-0 text-cip-red">✓</span>
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-cip-red" />
                       <span>{detalle}</span>
                     </li>
                   ))}
@@ -97,7 +100,8 @@ export function ProcessSection() {
 
         {/* Nota final */}
         <div className="mx-auto mt-16 max-w-xl rounded-lg border-2 border-cip-red/20 bg-cip-red-light p-4 text-center text-sm text-cip-red-dark">
-          💡 ¿Tienes dudas? Puedes consultar el estado de tu tr&aacute;mite en cualquier momento desde la
+          <Lightbulb className="mr-1 inline h-6 w-6 text-yellow-500" />
+          ¿Tienes dudas? Puedes consultar el estado de tu tr&aacute;mite en cualquier momento desde la
           p&aacute;gina de Consulta con tu DNI y correo electr&oacute;nico.
         </div>
       </div>

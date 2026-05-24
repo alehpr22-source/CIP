@@ -214,7 +214,7 @@ export function SolicitudForm({ carreras, sedes }: Props) {
                 <div
                   className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
                     i === step
-                      ? "bg-blue-700 text-white"
+                      ? "bg-cip-red text-white"
                       : i < step
                         ? "bg-green-500 text-white"
                         : "bg-gray-200 text-gray-500"
@@ -330,7 +330,7 @@ export function SolicitudForm({ carreras, sedes }: Props) {
               />
 
               <div className="flex justify-end pt-4">
-                <Button onClick={() => { if (validateStep0()) setStep(1) }}>
+                <Button variant="danger" onClick={() => { if (validateStep0()) setStep(1) }}>
                   Siguiente
                 </Button>
               </div>
@@ -370,7 +370,7 @@ export function SolicitudForm({ carreras, sedes }: Props) {
 
               <div className="flex justify-between pt-4">
                 <Button variant="outline" onClick={() => setStep(0)}>Atrás</Button>
-                <Button onClick={() => { if (validateStep1()) setStep(2) }}>
+                <Button variant="danger" onClick={() => { if (validateStep1()) setStep(2) }}>
                   Revisar y enviar
                 </Button>
               </div>
@@ -404,7 +404,7 @@ export function SolicitudForm({ carreras, sedes }: Props) {
 
               <div className="flex justify-between pt-4">
                 <Button variant="outline" onClick={() => setStep(1)}>Atrás</Button>
-                <Button loading={loading} onClick={handleSubmit}>Enviar solicitud</Button>
+                <Button variant="danger" loading={loading} onClick={handleSubmit}>Enviar solicitud</Button>
               </div>
             </div>
           )}
