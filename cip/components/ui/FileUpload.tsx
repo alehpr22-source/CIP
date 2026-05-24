@@ -4,12 +4,13 @@ interface FileUploadProps {
   label: string
   accept: string
   maxSizeMB: number
+  hint?: string
   error?: string
   preview?: string | null
   onChange: (file: File | null) => void
 }
 
-export function FileUpload({ label, accept, maxSizeMB, error, preview, onChange }: FileUploadProps) {
+export function FileUpload({ label, accept, maxSizeMB, hint, error, preview, onChange }: FileUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragOver, setDragOver] = useState(false)
 
@@ -22,6 +23,7 @@ export function FileUpload({ label, accept, maxSizeMB, error, preview, onChange 
   return (
     <div className="space-y-1">
       <label className="block text-sm font-medium text-gray-700">{label}</label>
+      {hint && <p className="text-xs text-gray-400">{hint}</p>}
       <div
         className={`relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition-colors ${
           dragOver ? "border-blue-500 bg-blue-50" : error ? "border-red-400 bg-red-50" : "border-gray-300 hover:border-gray-400"

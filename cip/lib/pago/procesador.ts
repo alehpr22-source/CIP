@@ -1,9 +1,3 @@
-export interface PagoResult {
-  exitoso: boolean
-  transaccionId?: string
-  mensaje: string
-}
-
 export interface VoucherData {
   transaccionId: string
   dni: string
@@ -12,10 +6,6 @@ export interface VoucherData {
   monto: number
   fecha: string
   voucherBase64: string
-}
-
-export function procesarPago(_monto: number, _metodo: string): PagoResult {
-  return { exitoso: false, mensaje: "No implementado" }
 }
 
 export function generarVoucher(data: {

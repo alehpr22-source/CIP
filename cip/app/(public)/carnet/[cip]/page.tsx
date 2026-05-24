@@ -1,4 +1,51 @@
-export default async function CarnetPage({ params }: { params: Promise<{ cip: string }> }) {
+import { obtenerDatosCarnet } from "@/actions/carnet.actions"
+import { Carnet } from "@/components/carnet/Carnet"
+import Link from "next/link"
+
+interface Props {
+  params: Promise<{ cip: string }>
+}
+
+export default async function CarnetPage({ params }: Props) {
   const { cip } = await params
-  return <div>Carnet CIP {cip}</div>
+  const datos = await obtenerDatosCarnet(cip)
+
+  if (!datos) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-12 text-center">
+        <h1 className="mb-4 text-2xl font-bold text-gray-800">Carnet no encontrado</h1>
+        <p className="mb-6 text-sm text-gray-500">
+          No se encontró un colegiado con el CIP <strong>{cip}</strong>.
+        </p>
+        <Link
+          href="/consulta"
+          className="text-sm font-medium text-blue-600 hover:text-blue-800 underline"
+        >
+          ← Ir a consulta
+        </Link>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mx-auto max-w-lg px-4 py-12">
+      <div className="mb-6 text-center">
+        <h1 className="text-2xl font-bold text-gray-800">🪪 Carnet de Colegiatura</h1>
+        <p className="mt-1 text-sm text-gray-500">
+          CIP: {datos.numero_cip}
+        </p>
+      </div>
+
+      <Carnet
+        fotoUrl={datos.foto_url}
+        apellidoPaterno={datos.apellido_paterno}
+        apellidoMaterno={datos.apellido_materno}
+        nombres={datos.nombres}
+        carreraCodigo={datos.carrera_codigo}
+        carreraNombre={datos.carrera_nombre}
+        dni={datos.dni}
+        numeroCip={datos.numero_cip}
+      />
+    </div>
+  )
 }

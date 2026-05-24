@@ -1,0 +1,246 @@
+-- ============================================
+-- POLÍTICAS RLS (ROW LEVEL SECURITY) - CIP
+-- Sistema de Colegiatura - Colegio de Ingenieros del Perú
+-- Generado: 23/05/2026
+-- ============================================
+
+-- ============================================
+-- TABLA: solicitantes
+-- ============================================
+
+-- Admins autenticados tienen control total
+create policy "Admins control total solicitantes"
+on public.solicitantes for all to authenticated
+using (
+  exists (
+    select 1 from public.usuarios_admin
+    where usuarios_admin.auth_user_id = auth.uid()
+  )
+);
+
+-- Anónimos pueden insertar (registro público)
+create policy "Anon puede insertar solicitantes"
+on public.solicitantes for insert to anon
+with check (true);
+
+-- Anónimos pueden leer (para confirmación)
+create policy "Anon puede leer solicitantes"
+on public.solicitantes for select to anon
+using (true);
+
+-- Anónimos pueden actualizar (para URLs de Storage)
+create policy "Anon puede update solicitantes"
+on public.solicitantes for update to anon
+using (true)
+with check (true);
+
+
+-- ============================================
+-- TABLA: expedientes
+-- ============================================
+
+create policy "Admins control total expedientes"
+on public.expedientes for all to authenticated
+using (
+  exists (
+    select 1 from public.usuarios_admin
+    where usuarios_admin.auth_user_id = auth.uid()
+  )
+);
+
+create policy "Anon puede insertar expedientes"
+on public.expedientes for insert to anon
+with check (true);
+
+create policy "Anon puede leer expedientes"
+on public.expedientes for select to anon
+using (true);
+
+create policy "Anon puede update expedientes"
+on public.expedientes for update to anon
+using (true)
+with check (true);
+
+
+-- ============================================
+-- TABLA: pagos_inscripcion
+-- ============================================
+
+create policy "Admins control total pagos_inscripcion"
+on public.pagos_inscripcion for all to authenticated
+using (
+  exists (
+    select 1 from public.usuarios_admin
+    where usuarios_admin.auth_user_id = auth.uid()
+  )
+);
+
+create policy "Anon puede insertar pagos_inscripcion"
+on public.pagos_inscripcion for insert to anon
+with check (true);
+
+create policy "Anon puede leer pagos_inscripcion"
+on public.pagos_inscripcion for select to anon
+using (true);
+
+
+-- ============================================
+-- TABLA: colegiados
+-- ============================================
+
+create policy "Admins control total colegiados"
+on public.colegiados for all to authenticated
+using (
+  exists (
+    select 1 from public.usuarios_admin
+    where usuarios_admin.auth_user_id = auth.uid()
+  )
+);
+
+create policy "Anon puede leer colegiados"
+on public.colegiados for select to anon
+using (true);
+
+create policy "Anon puede insertar colegiados"
+on public.colegiados for insert to anon
+with check (true);
+
+
+-- ============================================
+-- TABLA: usuarios_admin
+-- ============================================
+
+create policy "Admins pueden todo usuarios_admin"
+on public.usuarios_admin for all to authenticated
+using (true)
+with check (true);
+
+
+-- ============================================
+-- TABLA: carreras
+-- ============================================
+
+create policy "Anon puede leer carreras"
+on public.carreras for select to anon
+using (true);
+
+create policy "Autenticados pueden todo carreras"
+on public.carreras for all to authenticated
+using (true)
+with check (true);
+
+
+-- ============================================
+-- TABLA: sedes
+-- ============================================
+
+create policy "Anon puede leer sedes"
+on public.sedes for select to anon
+using (true);
+
+create policy "Autenticados pueden todo sedes"
+on public.sedes for all to authenticated
+using (true)
+with check (true);
+
+
+-- ============================================
+-- TABLA: pagos_mensualidades
+-- ============================================
+
+create policy "Admins control total pagos_mensualidades"
+on public.pagos_mensualidades for all to authenticated
+using (
+  exists (
+    select 1 from public.usuarios_admin
+    where usuarios_admin.auth_user_id = auth.uid()
+  )
+);
+
+create policy "Anon puede insertar pagos_mensualidades"
+on public.pagos_mensualidades for insert to anon
+with check (true);
+
+
+-- ============================================
+-- TABLA: historial_estados_expediente
+-- ============================================
+
+create policy "Admins control total historial_estados"
+on public.historial_estados_expediente for all to authenticated
+using (
+  exists (
+    select 1 from public.usuarios_admin
+    where usuarios_admin.auth_user_id = auth.uid()
+  )
+);
+
+
+-- ============================================
+-- TABLA: cip_correlativos
+-- ============================================
+
+create policy "Admins control total cip_correlativos"
+on public.cip_correlativos for all to authenticated
+using (
+  exists (
+    select 1 from public.usuarios_admin
+    where usuarios_admin.auth_user_id = auth.uid()
+  )
+)
+with check (
+  exists (
+    select 1 from public.usuarios_admin
+    where usuarios_admin.auth_user_id = auth.uid()
+  )
+);
+
+create policy "Anon puede leer cip_correlativos"
+on public.cip_correlativos for select to anon
+using (true);
+
+create policy "Anon puede insertar cip_correlativos"
+on public.cip_correlativos for insert to anon
+with check (true);
+
+create policy "Anon puede update cip_correlativos"
+on public.cip_correlativos for update to anon
+using (true)
+with check (true);
+
+
+-- ============================================
+-- STORAGE: bucket expedientes
+-- ============================================
+
+-- Crear bucket (ejecutar una sola vez)
+-- insert into storage.buckets (id, name, public)
+-- values ('expedientes', 'expedientes', true)
+-- on conflict (id) do nothing;
+
+-- Anónimos pueden subir archivos
+create policy "Anon puede subir archivos"
+on storage.objects for insert to anon
+with check (bucket_id = 'expedientes');
+
+-- Anónimos pueden leer archivos
+create policy "Anon puede leer archivos"
+on storage.objects for select to anon
+using (bucket_id = 'expedientes');
+
+-- Anónimos pueden actualizar archivos (upsert)
+create policy "Anon puede actualizar archivos"
+on storage.objects for update to anon
+using (bucket_id = 'expedientes')
+with check (bucket_id = 'expedientes');
+
+-- Anónimos pueden eliminar archivos
+create policy "Anon puede eliminar archivos"
+on storage.objects for delete to anon
+using (bucket_id = 'expedientes');
+
+-- Autenticados pueden todo en storage
+create policy "Autenticados pueden todo storage"
+on storage.objects for all to authenticated
+using (bucket_id = 'expedientes')
+with check (bucket_id = 'expedientes');

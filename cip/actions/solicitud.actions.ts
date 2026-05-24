@@ -8,7 +8,8 @@ import { subirArchivo } from "@/lib/supabase/storage"
 export interface SolicitudInput {
   dni: string
   nombres: string
-  apellidos: string
+  apellido_paterno: string
+  apellido_materno: string
   correo: string
   telefono: string
   carrera_id: string
@@ -17,8 +18,7 @@ export interface SolicitudInput {
   foto_base64: string
   titulo_base64: string
   dni_base64: string
-  voucher_base64: string
-  transaccion_id: string
+  validado_reniec: boolean
 }
 
 export async function validarDniConReniec(dni: string, nombres: string, apellidos: string) {
@@ -29,15 +29,17 @@ export async function validarDniConReniec(dni: string, nombres: string, apellido
 export async function registrarSolicitud(input: SolicitudInput) {
   const supabase = createClient()
 
-  const validador = getValidadorReniec()
-  const reniecResult = await validador.validar({
-    dni: input.dni,
-    nombres: input.nombres,
-    apellidos: input.apellidos,
-  })
-
-  if (!reniecResult.valido) {
-    return { error: `Validación RENIEC falló: ${reniecResult.mensaje}` }
+  if (!input.validado_reniec) {
+    const apellidosCompletos = `${input.apellido_paterno} ${input.apellido_materno}`
+    const validador = getValidadorReniec()
+    const reniecResult = await validador.validar({
+      dni: input.dni,
+      nombres: input.nombres,
+      apellidos: apellidosCompletos,
+    })
+    if (!reniecResult.valido) {
+      return { error: `Validación RENIEC falló: ${reniecResult.mensaje}` }
+    }
   }
 
   const { data: carreras, error: errCarreras } = await supabase
@@ -61,7 +63,8 @@ export async function registrarSolicitud(input: SolicitudInput) {
     .insert({
       dni: input.dni,
       nombres: input.nombres,
-      apellidos: input.apellidos,
+      apellido_paterno: input.apellido_paterno,
+      apellido_materno: input.apellido_materno,
       correo: input.correo || null,
       telefono: input.telefono || null,
       carrera_id: input.carrera_id,
@@ -79,16 +82,15 @@ export async function registrarSolicitud(input: SolicitudInput) {
     return { error: errSolicitante.message }
   }
 
-  const folder = `solicitudes/${solicitante.id}`
+  const folder = `solicitudes/${input.dni}`
 
-  const [fotoUrl, tituloUrl, dniUrl, voucherUrl] = await Promise.all([
+  const [fotoUrl, tituloUrl, dniUrl] = await Promise.all([
     subirArchivo("expedientes", `${folder}/foto.${extension(input.foto_base64)}`, input.foto_base64),
     subirArchivo("expedientes", `${folder}/titulo.${extension(input.titulo_base64)}`, input.titulo_base64),
     subirArchivo("expedientes", `${folder}/dni.${extension(input.dni_base64)}`, input.dni_base64),
-    subirArchivo("expedientes", `${folder}/voucher.png`, input.voucher_base64),
   ])
 
-  if (!fotoUrl || !tituloUrl || !dniUrl || !voucherUrl) {
+  if (!fotoUrl || !tituloUrl || !dniUrl) {
     return { error: "Error al subir archivos a Storage" }
   }
 
@@ -112,19 +114,6 @@ export async function registrarSolicitud(input: SolicitudInput) {
 
   if (errExpediente) {
     return { error: errExpediente.message }
-  }
-
-  const { error: errPago } = await supabase.from("pagos_inscripcion").insert({
-    expediente_id: expediente.id,
-    tipo_pago: "Virtual",
-    monto: 1500,
-    estado: "Aprobado",
-    transaccion_id: input.transaccion_id,
-    comprobante_url: voucherUrl,
-  })
-
-  if (errPago) {
-    return { error: errPago.message }
   }
 
   revalidatePath("/admin/expedientes")

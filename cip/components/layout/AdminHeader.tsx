@@ -1,5 +1,5 @@
 import { createAuthClient } from "@/lib/supabase/auth-server"
-import Link from "next/link"
+import { logoutAdmin } from "@/actions/auth.actions"
 
 export async function AdminHeader() {
   const supabase = await createAuthClient()
@@ -11,12 +11,11 @@ export async function AdminHeader() {
 
       <div className="flex items-center gap-4">
         <span className="text-sm text-gray-600">{user?.email}</span>
-        <Link
-          href="/admin/login?logout=true"
-          className="text-sm font-medium text-gray-600 hover:text-gray-900"
-        >
-          Cerrar sesi&oacute;n
-        </Link>
+        <form action={logoutAdmin}>
+          <button type="submit" className="cursor-pointer text-sm font-medium text-gray-600 hover:text-gray-900">
+            Cerrar sesi&oacute;n
+          </button>
+        </form>
       </div>
     </header>
   )
