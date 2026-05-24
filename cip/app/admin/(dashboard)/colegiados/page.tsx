@@ -64,7 +64,7 @@ async function ColegiadosTable(filtros: FiltrosColegiados) {
         {
           key: "carrera",
           header: "Carrera",
-          render: (item) => `${item.carrera_codigo} - ${item.carrera_nombre}`,
+          render: (item) => item.carrera_nombre,
         },
         {
           key: "codigo_expediente",
@@ -100,7 +100,7 @@ export default async function ColegiadosPage(props: {
 
   const supabase = createClient()
   const [carrerasData, sedesData] = await Promise.all([
-    supabase.from("carreras").select("id, codigo, nombre").order("nombre"),
+    supabase.from("carreras").select("id, nombre").order("nombre"),
     supabase.from("sedes").select("id, nombre").order("nombre"),
   ])
 
@@ -108,7 +108,7 @@ export default async function ColegiadosPage(props: {
     { value: "", label: "Todas" },
     ...(carrerasData.data ?? []).map((c) => ({
       value: c.id,
-      label: `${c.codigo} - ${c.nombre}`,
+      label: c.nombre,
     })),
   ]
 

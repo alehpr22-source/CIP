@@ -41,7 +41,6 @@ export default async function CarnetPage({ params }: Props) {
         apellidoPaterno={datos.apellido_paterno}
         apellidoMaterno={datos.apellido_materno}
         nombres={datos.nombres}
-        carreraCodigo={datos.carrera_codigo}
         carreraNombre={datos.carrera_nombre}
         dni={datos.dni}
         numeroCip={datos.numero_cip}

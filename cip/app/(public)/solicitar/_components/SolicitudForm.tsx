@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useMemo } from "react"
+import { useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
@@ -9,23 +9,23 @@ import { FileUpload } from "@/components/ui/FileUpload"
 import { Alert } from "@/components/ui/Alert"
 import { Spinner } from "@/components/ui/Spinner"
 import { validarDniConReniec, verificarDniExistente, registrarSolicitud, type SolicitudInput } from "@/actions/solicitud.actions"
-import type { Carrera, Sede, Universidad, UniversidadCarrera } from "@/types"
+import type { Sede, Universidad, Carrera } from "@/types"
 
 interface Props {
-  carreras: Carrera[]
   sedes: Sede[]
   universidades: Universidad[]
-  universidadCarreras: UniversidadCarrera[]
+  carreras: Carrera[]
 }
 
 const STEPS = ["Datos personales", "Documentos", "Confirmación"]
-const CARRERA_OTRO = "__otro__"
 
 function validarDNI(value: string) {
   return /^\d{8}$/.test(value)
 }
 
-export function SolicitudForm({ carreras, sedes, universidades, universidadCarreras }: Props) {
+const CARRERA_OTRA_VALUE = "otra"
+
+export function SolicitudForm({ sedes, universidades, carreras }: Props) {
   const router = useRouter()
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -47,8 +47,8 @@ export function SolicitudForm({ carreras, sedes, universidades, universidadCarre
     telefono: "",
     sede_id: "",
     universidad_id: "",
-    carrera_id: "",
     universidad: "",
+    carrera_id: "",
     carrera_manual: "",
   })
 
@@ -67,41 +67,22 @@ export function SolicitudForm({ carreras, sedes, universidades, universidadCarre
   const [tituloError, setTituloError] = useState("")
   const [dniError, setDniError] = useState("")
 
-  const universidadFiltradas = useMemo(
-    () => universidades.filter((u) => u.sede_id === form.sede_id),
-    [universidades, form.sede_id],
-  )
-
-  const carreraIdsPorUniversidad = useMemo(() => {
-    const set = new Set<string>()
-    universidadCarreras
-      .filter((uc) => uc.universidad_id === form.universidad_id)
-      .forEach((uc) => set.add(uc.carrera_id))
-    return set
-  }, [universidadCarreras, form.universidad_id])
-
-  const carrerasFiltradas = useMemo(
-    () => carreras.filter((c) => carreraIdsPorUniversidad.has(c.id)),
-    [carreras, carreraIdsPorUniversidad],
-  )
-
   const updateField = useCallback((field: string, value: string) => {
     setForm((prev) => {
       const next = { ...prev, [field]: value }
       if (field === "sede_id") {
         next.universidad_id = ""
-        next.carrera_id = ""
-        next.carrera_manual = ""
         next.universidad = ""
       }
       if (field === "universidad_id") {
-        next.carrera_id = ""
-        next.carrera_manual = ""
         const univ = universidades.find((u) => u.id === value)
         next.universidad = univ?.nombre ?? ""
       }
-      if (field === "carrera_id" && value !== CARRERA_OTRO) {
-        next.carrera_manual = ""
+      if (field === "carrera_id") {
+        if (value && value !== CARRERA_OTRA_VALUE) {
+          const carrera = carreras.find((c) => c.id === value)
+          next.carrera_manual = carrera?.nombre ?? ""
+        }
       }
       return next
     })
@@ -114,7 +95,7 @@ export function SolicitudForm({ carreras, sedes, universidades, universidadCarre
       setReniecStatus(null)
       if (field === "dni") { setReniecValidated(false); setDuplicadoError("") }
     }
-  }, [universidades])
+  }, [universidades, carreras])
 
   function datosReniecCompletos() {
     return form.dni.length === 8
@@ -190,12 +171,8 @@ export function SolicitudForm({ carreras, sedes, universidades, universidadCarre
 
     if (!form.sede_id) newErrors.sede_id = "Selecciona una sede"
     if (!form.universidad_id) newErrors.universidad_id = "Selecciona una universidad"
-
-    if (form.carrera_id === CARRERA_OTRO) {
-      if (!form.carrera_manual) newErrors.carrera_manual = "Escribe el nombre de la carrera"
-    } else if (!form.carrera_id) {
-      newErrors.carrera_id = "Selecciona una carrera"
-    }
+    if (!form.carrera_id && !form.carrera_manual) newErrors.carrera_manual = "Selecciona o escribe tu carrera"
+    if (form.carrera_id === CARRERA_OTRA_VALUE && !form.carrera_manual) newErrors.carrera_manual = "Escribe el nombre de tu carrera"
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -229,13 +206,10 @@ export function SolicitudForm({ carreras, sedes, universidades, universidadCarre
       return
     }
 
-    const carreraEsOtro = form.carrera_id === CARRERA_OTRO
     const input: SolicitudInput = {
       ...form,
-      carrera_id: carreraEsOtro ? null : form.carrera_id,
-      universidad: form.universidad,
+      carrera_id: form.carrera_id && form.carrera_id !== CARRERA_OTRA_VALUE ? form.carrera_id : null,
       universidad_id: form.universidad_id || null,
-      carrera_manual: carreraEsOtro ? form.carrera_manual : null,
       foto_base64: await toBase64(foto!),
       titulo_base64: await toBase64(titulo!),
       dni_base64: await toBase64(dniFile!),
@@ -409,18 +383,29 @@ export function SolicitudForm({ carreras, sedes, universidades, universidadCarre
 
               <Select
                 label="Universidad"
-                placeholder={form.sede_id ? "Selecciona una universidad" : "Primero selecciona una sede"}
-                options={universidadFiltradas.map((u) => ({ value: u.id, label: u.nombre }))}
+                placeholder="Selecciona una universidad"
+                options={universidades.map((u) => ({ value: u.id, label: u.nombre }))}
                 value={form.universidad_id}
                 onChange={(e) => updateField("universidad_id", e.target.value)}
                 error={errors.universidad_id}
-                disabled={!form.sede_id}
               />
 
-              {form.carrera_id === CARRERA_OTRO ? (
+              <Select
+                label="Carrera de ingeniería"
+                placeholder="Selecciona una carrera"
+                options={[
+                  ...carreras.map((c) => ({ value: c.id, label: c.nombre })),
+                  { value: CARRERA_OTRA_VALUE, label: "No está aquí / Otra" },
+                ]}
+                value={form.carrera_id}
+                onChange={(e) => updateField("carrera_id", e.target.value)}
+                error={!form.carrera_id || form.carrera_id === CARRERA_OTRA_VALUE ? errors.carrera_manual : undefined}
+              />
+
+              {form.carrera_id === CARRERA_OTRA_VALUE && (
                 <Input
-                  label="Carrera de ingeniería"
-                  placeholder="Escribe el nombre de tu carrera"
+                  label="Escribe tu carrera"
+                  placeholder="Nombre de tu carrera"
                   value={form.carrera_manual}
                   onChange={(e) => {
                     setForm((prev) => ({ ...prev, carrera_manual: e.target.value }))
@@ -428,35 +413,6 @@ export function SolicitudForm({ carreras, sedes, universidades, universidadCarre
                   }}
                   error={errors.carrera_manual}
                 />
-              ) : (
-                <Select
-                  label="Carrera de ingeniería"
-                  placeholder={
-                    form.universidad_id
-                      ? carrerasFiltradas.length > 0
-                        ? "Selecciona una carrera"
-                        : "No hay carreras registradas"
-                      : "Primero selecciona una universidad"
-                  }
-                  options={[
-                    ...carrerasFiltradas.map((c) => ({ value: c.id, label: `${c.codigo} - ${c.nombre}` })),
-                    ...(form.universidad_id ? [{ value: CARRERA_OTRO, label: "Otra / No aparece aquí" }] : []),
-                  ]}
-                  value={form.carrera_id}
-                  onChange={(e) => updateField("carrera_id", e.target.value)}
-                  error={errors.carrera_id}
-                  disabled={!form.universidad_id}
-                />
-              )}
-
-              {form.carrera_id === CARRERA_OTRO && (
-                <button
-                  type="button"
-                  className="text-sm text-blue-600 hover:underline"
-                  onClick={() => updateField("carrera_id", "")}
-                >
-                  ← Volver a seleccionar de la lista
-                </button>
               )}
 
               <div className="flex justify-end pt-4">
@@ -522,7 +478,7 @@ export function SolicitudForm({ carreras, sedes, universidades, universidadCarre
                 <p><span className="font-medium text-gray-700">Nombres:</span> {form.nombres} {form.apellido_paterno} {form.apellido_materno}</p>
                 <p><span className="font-medium text-gray-700">Sede:</span> {sedes.find((s) => s.id === form.sede_id)?.nombre}</p>
                 <p><span className="font-medium text-gray-700">Universidad:</span> {form.universidad || universidades.find((u) => u.id === form.universidad_id)?.nombre}</p>
-                <p><span className="font-medium text-gray-700">Carrera:</span> {form.carrera_id === CARRERA_OTRO ? form.carrera_manual : carreras.find((c) => c.id === form.carrera_id)?.nombre}</p>
+                <p><span className="font-medium text-gray-700">Carrera:</span> {carreras.find((c) => c.id === form.carrera_id)?.nombre ?? form.carrera_manual}</p>
                 <p>
                   <span className="font-medium text-gray-700">RENIEC:</span>{" "}
                   <span className="text-green-600">Verificado</span>

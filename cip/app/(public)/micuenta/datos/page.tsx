@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createAuthClient } from "@/lib/supabase/auth-server"
 import { FormularioDatos } from "./FormularioDatos"
 import { Alert } from "@/components/ui/Alert"
-import { obtenerUniversidades, obtenerUniversidadCarreras } from "@/lib/carreras"
+import { obtenerUniversidades } from "@/lib/carreras"
 
 export default async function DatosPage() {
   const supabase = await createAuthClient()
@@ -13,7 +13,7 @@ export default async function DatosPage() {
   const serverClient = createClient()
   const { data: solicitante } = await serverClient
     .from("solicitantes")
-    .select("id, dni, nombres, apellido_paterno, apellido_materno, correo, telefono, universidad, universidad_id, carrera_id, carrera_manual, sede_id")
+    .select("id, dni, nombres, apellido_paterno, apellido_materno, correo, telefono, universidad, universidad_id, carrera_manual, sede_id")
     .eq("auth_user_id", user.id)
     .single()
 
@@ -25,14 +25,11 @@ export default async function DatosPage() {
     )
   }
 
-  const [carreras, sedes, universidades, universidadCarreras] = await Promise.all([
-    serverClient.from("carreras").select("id, codigo, nombre"),
+  const [sedes, universidades] = await Promise.all([
     serverClient.from("sedes").select("id, nombre"),
     obtenerUniversidades(),
-    obtenerUniversidadCarreras(),
   ])
 
-  const carrera = carreras.data?.find((c) => c.id === solicitante.carrera_id)
   const sede = sedes.data?.find((s) => s.id === solicitante.sede_id)
 
   return (
@@ -43,7 +40,7 @@ export default async function DatosPage() {
         <div className="mb-6 grid gap-2 text-sm sm:grid-cols-2">
           <div><span className="font-medium text-gray-500">DNI:</span> <span className="text-gray-800">{solicitante.dni}</span></div>
           <div><span className="font-medium text-gray-500">Nombre completo:</span> <span className="text-gray-800">{solicitante.nombres} {solicitante.apellido_paterno} {solicitante.apellido_materno}</span></div>
-          <div><span className="font-medium text-gray-500">Carrera:</span> <span className="text-gray-800">{solicitante.carrera_manual || (carrera ? `${carrera.codigo} - ${carrera.nombre}` : "-")}</span></div>
+          <div><span className="font-medium text-gray-500">Carrera:</span> <span className="text-gray-800">{solicitante.carrera_manual || "-"}</span></div>
           <div><span className="font-medium text-gray-500">Sede:</span> <span className="text-gray-800">{sede?.nombre}</span></div>
           <div><span className="font-medium text-gray-500">Correo:</span> <span className="text-gray-800">{solicitante.correo}</span></div>
           <div><span className="font-medium text-gray-500">Teléfono:</span> <span className="text-gray-800">{solicitante.telefono || "-"}</span></div>
@@ -55,12 +52,8 @@ export default async function DatosPage() {
             correo={solicitante.correo ?? ""}
             telefono={solicitante.telefono ?? ""}
             universidadId={solicitante.universidad_id ?? null}
-            sedeId={solicitante.sede_id}
             universidades={universidades}
-            universidadCarreras={universidadCarreras}
-            carreras={carreras.data ?? []}
-            carreraId={solicitante.carrera_id ?? null}
-            carreraManual={solicitante.carrera_manual ?? null}
+            carreraManual={solicitante.carrera_manual ?? ""}
           />
         </div>
       </div>

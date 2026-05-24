@@ -11,7 +11,6 @@ import Link from "next/link"
 const estadoOpciones = [
   { value: "", label: "Todos" },
   { value: "Pendiente", label: "Pendiente" },
-  { value: "Observado", label: "Observado" },
   { value: "Pendiente de pago", label: "Pendiente de pago" },
   { value: "Aprobado", label: "Aprobado" },
   { value: "Rechazado", label: "Rechazado" },

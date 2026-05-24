@@ -1,6 +1,5 @@
 export interface Carrera {
   id: string
-  codigo: string
   nombre: string
 }
 
@@ -14,12 +13,6 @@ export interface Sede {
 export interface Universidad {
   id: string
   nombre: string
-  sede_id: string
-}
-
-export interface UniversidadCarrera {
-  universidad_id: string
-  carrera_id: string
 }
 
 export interface Solicitante {
@@ -44,7 +37,7 @@ export interface Expediente {
   id: string
   solicitante_id: string
   codigo_expediente: string
-  estado: "Pendiente" | "Observado" | "Aprobado" | "Rechazado"
+  estado: "Pendiente" | "Pendiente de pago" | "Aprobado" | "Rechazado"
   observaciones?: string
   fecha_revision?: string
 }

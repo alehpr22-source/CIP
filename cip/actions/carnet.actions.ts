@@ -14,7 +14,7 @@ export async function obtenerDatosCarnet(dni: string) {
       apellido_paterno,
       apellido_materno,
       foto_url,
-      carrera_id
+      carrera_manual
     `)
     .eq("dni", dni)
     .single()
@@ -27,7 +27,7 @@ export async function obtenerDatosCarnet(dni: string) {
     .eq("solicitante_id", solicitante.id)
     .order("created_at", { ascending: false })
     .limit(1)
-    .single()
+    .maybeSingle()
 
   if (!expediente || expediente.estado !== "Aprobado") return null
 
@@ -43,12 +43,6 @@ export async function obtenerDatosCarnet(dni: string) {
 
   if (!colegiado) return null
 
-  const { data: carrera } = await supabase
-    .from("carreras")
-    .select("codigo, nombre")
-    .eq("id", solicitante.carrera_id)
-    .single()
-
   return {
     numero_cip: colegiado.numero_cip,
     estado_habilitacion: colegiado.estado_habilitacion,
@@ -58,7 +52,6 @@ export async function obtenerDatosCarnet(dni: string) {
     apellido_paterno: solicitante.apellido_paterno,
     apellido_materno: solicitante.apellido_materno,
     foto_url: solicitante.foto_url,
-    carrera_codigo: carrera?.codigo ?? "",
-    carrera_nombre: carrera?.nombre ?? "",
+    carrera_nombre: solicitante.carrera_manual ?? "",
   }
 }

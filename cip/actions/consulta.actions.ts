@@ -18,7 +18,7 @@ export async function consultarExpediente(dni: string, correo: string) {
       nombres,
       apellido_paterno,
       apellido_materno,
-      carrera_id,
+      carrera_manual,
       sede_id,
       universidad,
       foto_url,
@@ -46,7 +46,7 @@ export async function consultarExpediente(dni: string, correo: string) {
     .eq("solicitante_id", solicitante.id)
     .order("created_at", { ascending: false })
     .limit(1)
-    .single()
+    .maybeSingle()
 
   if (!expediente) {
     return {
@@ -54,10 +54,11 @@ export async function consultarExpediente(dni: string, correo: string) {
         id: solicitante.id, dni: solicitante.dni,
         nombres: solicitante.nombres, apellido_paterno: solicitante.apellido_paterno,
         apellido_materno: solicitante.apellido_materno,
-        carrera_id: solicitante.carrera_id, sede_id: solicitante.sede_id,
+        sede_id: solicitante.sede_id,
         universidad: solicitante.universidad,
+        carrera_manual: solicitante.carrera_manual ?? "",
         foto_url: solicitante.foto_url, titulo_url: solicitante.titulo_url, dni_url: solicitante.dni_url,
-        carrera_nombre: "", sede_nombre: "",
+        sede_nombre: "",
       },
       expediente: null,
       colegiado: null,
@@ -88,13 +89,8 @@ export async function consultarExpediente(dni: string, correo: string) {
     .eq("expediente_id", expediente.id)
     .single()
 
-  const [carreras, sedes] = await Promise.all([
-    supabase.from("carreras").select("id, nombre"),
-    supabase.from("sedes").select("id, nombre"),
-  ])
-
-  const carrera = carreras.data?.find((c) => c.id === solicitante.carrera_id)
-  const sede = sedes.data?.find((s) => s.id === solicitante.sede_id)
+  const { data: sedes } = await supabase.from("sedes").select("id, nombre")
+  const sede = sedes?.find((s) => s.id === solicitante.sede_id)
 
   const colegiado = colegiadoRaw ? {
     id: colegiadoRaw.id,
@@ -116,10 +112,10 @@ export async function consultarExpediente(dni: string, correo: string) {
       id: solicitante.id, dni: solicitante.dni,
       nombres: solicitante.nombres, apellido_paterno: solicitante.apellido_paterno,
       apellido_materno: solicitante.apellido_materno,
-      carrera_id: solicitante.carrera_id, sede_id: solicitante.sede_id,
+      sede_id: solicitante.sede_id,
       universidad: solicitante.universidad,
+      carrera_manual: solicitante.carrera_manual ?? "",
       foto_url: solicitante.foto_url, titulo_url: solicitante.titulo_url, dni_url: solicitante.dni_url,
-      carrera_nombre: carrera?.nombre ?? "-",
       sede_nombre: sede?.nombre ?? "-",
     },
     expediente: {
@@ -166,14 +162,14 @@ export async function actualizarDocumento(
     .eq("solicitante_id", solicitanteId)
     .order("created_at", { ascending: false })
     .limit(1)
-    .single()
+    .maybeSingle()
 
   if (!expediente) {
     return { error: "Expediente no encontrado" }
   }
 
-  if (expediente.estado !== "Observado") {
-    return { error: "Solo puedes cambiar documentos cuando tu expediente está Observado" }
+  if (expediente.estado !== "Rechazado") {
+    return { error: "Solo puedes cambiar documentos cuando tu expediente está Rechazado" }
   }
 
   const extensionMap: Record<string, string> = {
@@ -238,22 +234,21 @@ export async function enviarParaRevision(solicitanteId: string, dni: string, cor
     .eq("solicitante_id", solicitanteId)
     .order("created_at", { ascending: false })
     .limit(1)
-    .single()
+    .maybeSingle()
 
   if (!expediente) {
     return { error: "Expediente no encontrado" }
   }
 
-  if (expediente.estado !== "Observado") {
-    return { error: "El expediente no está en estado Observado" }
+  if (expediente.estado !== "Rechazado") {
+    return { error: "El expediente no está en estado Rechazado" }
   }
 
-  const { error: errEstado } = await supabase
+  const { error: errInsert } = await supabase
     .from("expedientes")
-    .update({ estado: "Pendiente" })
-    .eq("id", expediente.id)
+    .insert({ solicitante_id: solicitanteId, estado: "Pendiente" })
 
-  if (errEstado) return { error: errEstado.message }
+  if (errInsert) return { error: errInsert.message }
 
   return { success: true }
 }
@@ -288,7 +283,7 @@ export async function realizarPago(
     .eq("solicitante_id", solicitanteId)
     .order("created_at", { ascending: false })
     .limit(1)
-    .single()
+    .maybeSingle()
 
   if (!expediente) {
     return { error: "Expediente no encontrado" }

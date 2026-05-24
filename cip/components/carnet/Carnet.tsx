@@ -9,7 +9,6 @@ interface Props {
   apellidoPaterno: string
   apellidoMaterno: string
   nombres: string
-  carreraCodigo: string
   carreraNombre: string
   dni: string
   numeroCip: string
@@ -21,7 +20,6 @@ export function Carnet({
   apellidoPaterno,
   apellidoMaterno,
   nombres,
-  carreraCodigo,
   carreraNombre,
   dni,
   numeroCip,
@@ -102,7 +100,7 @@ export function Carnet({
             <div className="mt-4 border-t border-gray-200 pt-3">
               <p className="text-xs font-semibold uppercase text-gray-500">Carrera</p>
               <p className="text-sm font-bold text-gray-900">
-                {carreraCodigo} - {carreraNombre}
+                {carreraNombre}
               </p>
             </div>
 

@@ -1,12 +1,11 @@
 import { SolicitudForm } from "./_components/SolicitudForm"
-import { obtenerCarreras, obtenerSedes, obtenerUniversidades, obtenerUniversidadCarreras } from "@/lib/carreras"
+import { obtenerSedes, obtenerUniversidades, obtenerCarreras } from "@/lib/carreras"
 
 export default async function SolicitarPage() {
-  const [carreras, sedes, universidades, universidadCarreras] = await Promise.all([
-    obtenerCarreras(),
+  const [sedes, universidades, carreras] = await Promise.all([
     obtenerSedes(),
     obtenerUniversidades(),
-    obtenerUniversidadCarreras(),
+    obtenerCarreras(),
   ])
 
   return (
@@ -21,10 +20,9 @@ export default async function SolicitarPage() {
       </div>
 
       <SolicitudForm
-        carreras={carreras}
         sedes={sedes}
         universidades={universidades}
-        universidadCarreras={universidadCarreras}
+        carreras={carreras}
       />
     </div>
   )

@@ -13,11 +13,11 @@ export interface SolicitudInput {
   apellido_materno: string
   correo: string
   telefono: string
-  carrera_id: string | null
   sede_id: string
   universidad: string
   universidad_id: string | null
-  carrera_manual: string | null
+  carrera_id: string | null
+  carrera_manual: string
   foto_base64: string
   titulo_base64: string
   dni_base64: string
@@ -56,14 +56,6 @@ export async function registrarSolicitud(input: SolicitudInput) {
     }
   }
 
-  const { data: carreras, error: errCarreras } = await supabase
-    .from("carreras")
-    .select("id, codigo, nombre")
-
-  if (errCarreras || !carreras || carreras.length === 0) {
-    return { error: "Error al cargar carreras" }
-  }
-
   const { data: sedes, error: errSedes } = await supabase
     .from("sedes")
     .select("id, nombre")
@@ -91,11 +83,11 @@ export async function registrarSolicitud(input: SolicitudInput) {
       apellido_materno: input.apellido_materno,
       correo: input.correo || null,
       telefono: input.telefono || null,
-      carrera_id: input.carrera_id || null,
+      carrera_id: input.carrera_id,
       sede_id: input.sede_id,
       universidad: input.universidad,
       universidad_id: input.universidad_id || null,
-      carrera_manual: input.carrera_manual || null,
+      carrera_manual: input.carrera_manual,
       foto_url: "",
       titulo_url: "",
       dni_url: "",

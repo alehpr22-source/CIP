@@ -17,7 +17,7 @@ export async function AdminHeader() {
   const links = []
 
   if (rol === "SuperAdmin" || rol === "Revisor" || rol === "Tesoreria") {
-    links.push({ href: "/admin/expedientes", label: "Expedientes" })
+    links.push({ href: "/admin/expedientes", label: "Solicitudes" })
   }
 
   if (rol === "SuperAdmin") {

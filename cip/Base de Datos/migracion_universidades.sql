@@ -7,9 +7,7 @@
 create table if not exists public.universidades (
   id uuid not null default gen_random_uuid(),
   nombre varchar(255) not null,
-  sede_id uuid not null,
-  constraint universidades_pkey primary key (id),
-  constraint universidades_sede_id_fkey foreign key (sede_id) references public.sedes (id)
+  constraint universidades_pkey primary key (id)
 );
 
 -- 2. TABLA UNIVERSIDAD_CARRERAS (qué carreras ofrece cada universidad)

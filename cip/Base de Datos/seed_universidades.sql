@@ -60,249 +60,68 @@ insert into public.sedes (nombre) values
 on conflict do nothing;
 
 -- ============================================
--- 3. UNIVERSIDADES (Lima)
+-- 3. UNIVERSIDADES
 -- ============================================
-with sede as (select id from public.sedes where nombre ilike '%Lima%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Nacional de Ingeniería (UNI)', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Lima%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Nacional Mayor de San Marcos (UNMSM)', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Lima%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Pontificia Universidad Católica del Perú (PUCP)', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Lima%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad de Lima', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Lima%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Peruana de Ciencias Aplicadas (UPC)', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Lima%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Ricardo Palma', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Lima%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Nacional Federico Villarreal', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Lima%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Nacional Agraria La Molina', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Lima%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad de Ingeniería y Tecnología (UTEC)', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Lima%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad César Vallejo - Lima', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Lima%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Privada del Norte - Lima', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Lima%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Tecnológica del Perú (UTP) - Lima', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Lima%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad San Martín de Porres', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Lima%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Científica del Sur', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Lima%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Nacional del Callao', sede.id from sede;
-
--- ============================================
--- 4. UNIVERSIDADES (Arequipa)
--- ============================================
-with sede as (select id from public.sedes where nombre ilike '%Arequipa%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Nacional de San Agustín (UNSA)', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Arequipa%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Católica San Pablo', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Arequipa%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Tecnológica del Perú (UTP) - Arequipa', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Arequipa%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad La Salle', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Arequipa%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Continental - Arequipa', sede.id from sede;
-
--- ============================================
--- 5. UNIVERSIDADES (Cusco)
--- ============================================
-with sede as (select id from public.sedes where nombre ilike '%Cusco%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Nacional de San Antonio Abad del Cusco (UNSAAC)', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Cusco%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Andina del Cusco', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Cusco%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Continental - Cusco', sede.id from sede;
-
--- ============================================
--- 6. UNIVERSIDADES (La Libertad)
--- ============================================
-with sede as (select id from public.sedes where nombre ilike '%La Libertad%' or nombre ilike '%Trujillo%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Nacional de Trujillo (UNT)', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%La Libertad%' or nombre ilike '%Trujillo%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Privada Antenor Orrego (UPAO)', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%La Libertad%' or nombre ilike '%Trujillo%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad César Vallejo - Trujillo', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%La Libertad%' or nombre ilike '%Trujillo%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Privada del Norte - Trujillo', sede.id from sede;
-
--- ============================================
--- 7. UNIVERSIDADES (Piura)
--- ============================================
-with sede as (select id from public.sedes where nombre ilike '%Piura%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Nacional de Piura (UNP)', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Piura%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad de Piura (UDEP)', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Piura%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad César Vallejo - Piura', sede.id from sede;
-
--- ============================================
--- 8. UNIVERSIDADES (Lambayeque)
--- ============================================
-with sede as (select id from public.sedes where nombre ilike '%Lambayeque%' or nombre ilike '%Chiclayo%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Nacional Pedro Ruiz Gallo', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Lambayeque%' or nombre ilike '%Chiclayo%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Católica Santo Toribio de Mogrovejo', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Lambayeque%' or nombre ilike '%Chiclayo%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad César Vallejo - Chiclayo', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Lambayeque%' or nombre ilike '%Chiclayo%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Señor de Sipán', sede.id from sede;
-
--- ============================================
--- 9. UNIVERSIDADES (Junín)
--- ============================================
-with sede as (select id from public.sedes where nombre ilike '%Junín%' or nombre ilike '%Huancayo%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Nacional del Centro del Perú (UNCP)', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Junín%' or nombre ilike '%Huancayo%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Continental - Huancayo', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Junín%' or nombre ilike '%Huancayo%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Peruana Los Andes', sede.id from sede;
-
--- ============================================
--- 10. UNIVERSIDADES (Puno)
--- ============================================
-with sede as (select id from public.sedes where nombre ilike '%Puno%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Nacional del Altiplano (UNA)', sede.id from sede;
-
--- ============================================
--- 11. UNIVERSIDADES (Cajamarca)
--- ============================================
-with sede as (select id from public.sedes where nombre ilike '%Cajamarca%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Nacional de Cajamarca', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Cajamarca%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Privada del Norte - Cajamarca', sede.id from sede;
-
--- ============================================
--- 12. UNIVERSIDADES (Ica)
--- ============================================
-with sede as (select id from public.sedes where nombre ilike '%Ica%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Nacional San Luis Gonzaga', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Ica%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Privada San Juan Bautista - Ica', sede.id from sede;
-
--- ============================================
--- 13. UNIVERSIDADES (Loreto)
--- ============================================
-with sede as (select id from public.sedes where nombre ilike '%Loreto%' or nombre ilike '%Iquitos%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Nacional de la Amazonía Peruana (UNAP)', sede.id from sede;
-
--- ============================================
--- 14. UNIVERSIDADES (Tacna)
--- ============================================
-with sede as (select id from public.sedes where nombre ilike '%Tacna%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Nacional Jorge Basadre Grohmann', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Tacna%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Privada de Tacna', sede.id from sede;
-
--- ============================================
--- 15. UNIVERSIDADES (Áncash)
--- ============================================
-with sede as (select id from public.sedes where nombre ilike '%Áncash%' or nombre ilike '%Ancash%' or nombre ilike '%Huaraz%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Nacional Santiago Antúnez de Mayolo', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Áncash%' or nombre ilike '%Ancash%' or nombre ilike '%Huaraz%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad San Pedro', sede.id from sede;
-
--- ============================================
--- 16. UNIVERSIDADES (Huánuco)
--- ============================================
-with sede as (select id from public.sedes where nombre ilike '%Huánuco%' or nombre ilike '%Huanuco%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Nacional Hermilio Valdizán', sede.id from sede;
-
--- ============================================
--- 17. UNIVERSIDADES (Ayacucho)
--- ============================================
-with sede as (select id from public.sedes where nombre ilike '%Ayacucho%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Nacional San Cristóbal de Huamanga', sede.id from sede;
-
--- ============================================
--- 18. UNIVERSIDADES (San Martín)
--- ============================================
-with sede as (select id from public.sedes where nombre ilike '%San Martín%' or nombre ilike '%Moyobamba%' or nombre ilike '%Tarapoto%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Nacional de San Martín', sede.id from sede;
-
--- ============================================
--- 19. UNIVERSIDADES (resto de regiones)
--- ============================================
-with sede as (select id from public.sedes where nombre ilike '%Ucayali%' or nombre ilike '%Pucallpa%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Nacional de Ucayali', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Amazonas%' or nombre ilike '%Chachapoyas%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Nacional Toribio Rodríguez de Mendoza', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Apurímac%' or nombre ilike '%Apurimac%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Nacional Micaela Bastidas de Apurímac', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Huancavelica%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Nacional de Huancavelica', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Moquegua%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Nacional de Moquegua', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Moquegua%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad José Carlos Mariátegui', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Pasco%' or nombre ilike '%Cerro de Pasco%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Nacional Daniel Alcides Carrión', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Tumbes%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Nacional de Tumbes', sede.id from sede;
-with sede as (select id from public.sedes where nombre ilike '%Madre de Dios%' or nombre ilike '%Puerto Maldonado%' limit 1)
-insert into public.universidades (nombre, sede_id)
-select 'Universidad Nacional Amazónica de Madre de Dios', sede.id from sede;
+insert into public.universidades (nombre) values
+  ('Universidad Nacional de Ingeniería (UNI)'),
+  ('Universidad Nacional Mayor de San Marcos (UNMSM)'),
+  ('Pontificia Universidad Católica del Perú (PUCP)'),
+  ('Universidad de Lima'),
+  ('Universidad Peruana de Ciencias Aplicadas (UPC)'),
+  ('Universidad Ricardo Palma'),
+  ('Universidad Nacional Federico Villarreal'),
+  ('Universidad Nacional Agraria La Molina'),
+  ('Universidad de Ingeniería y Tecnología (UTEC)'),
+  ('Universidad César Vallejo - Lima'),
+  ('Universidad Privada del Norte - Lima'),
+  ('Universidad Tecnológica del Perú (UTP) - Lima'),
+  ('Universidad San Martín de Porres'),
+  ('Universidad Científica del Sur'),
+  ('Universidad Nacional del Callao'),
+  ('Universidad Nacional de San Agustín (UNSA)'),
+  ('Universidad Católica San Pablo'),
+  ('Universidad Tecnológica del Perú (UTP) - Arequipa'),
+  ('Universidad La Salle'),
+  ('Universidad Continental - Arequipa'),
+  ('Universidad Nacional de San Antonio Abad del Cusco (UNSAAC)'),
+  ('Universidad Andina del Cusco'),
+  ('Universidad Continental - Cusco'),
+  ('Universidad Nacional de Trujillo (UNT)'),
+  ('Universidad Privada Antenor Orrego (UPAO)'),
+  ('Universidad César Vallejo - Trujillo'),
+  ('Universidad Privada del Norte - Trujillo'),
+  ('Universidad Nacional de Piura (UNP)'),
+  ('Universidad de Piura (UDEP)'),
+  ('Universidad César Vallejo - Piura'),
+  ('Universidad Nacional Pedro Ruiz Gallo'),
+  ('Universidad Católica Santo Toribio de Mogrovejo'),
+  ('Universidad César Vallejo - Chiclayo'),
+  ('Universidad Señor de Sipán'),
+  ('Universidad Nacional del Centro del Perú (UNCP)'),
+  ('Universidad Continental - Huancayo'),
+  ('Universidad Peruana Los Andes'),
+  ('Universidad Nacional del Altiplano (UNA)'),
+  ('Universidad Nacional de Cajamarca'),
+  ('Universidad Privada del Norte - Cajamarca'),
+  ('Universidad Nacional San Luis Gonzaga'),
+  ('Universidad Privada San Juan Bautista - Ica'),
+  ('Universidad Nacional de la Amazonía Peruana (UNAP)'),
+  ('Universidad Nacional Jorge Basadre Grohmann'),
+  ('Universidad Privada de Tacna'),
+  ('Universidad Nacional Santiago Antúnez de Mayolo'),
+  ('Universidad San Pedro'),
+  ('Universidad Nacional Hermilio Valdizán'),
+  ('Universidad Nacional San Cristóbal de Huamanga'),
+  ('Universidad Nacional de San Martín'),
+  ('Universidad Nacional de Ucayali'),
+  ('Universidad Nacional Toribio Rodríguez de Mendoza'),
+  ('Universidad Nacional Micaela Bastidas de Apurímac'),
+  ('Universidad Nacional de Huancavelica'),
+  ('Universidad Nacional de Moquegua'),
+  ('Universidad José Carlos Mariátegui'),
+  ('Universidad Nacional Daniel Alcides Carrión'),
+  ('Universidad Nacional de Tumbes'),
+  ('Universidad Nacional Amazónica de Madre de Dios');
 
 -- ============================================
 -- 20. RELACIONES UNIVERSIDAD-CARRERA

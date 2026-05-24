@@ -4,19 +4,15 @@ import { consultarExpediente } from "@/actions/consulta.actions"
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
-import { ESTADO_BADGE, formatDate } from "@/lib/constants"
+import { ESTADO_BADGE, formatDate, parsearObservaciones } from "@/lib/constants"
+import { DocumentPreview } from "@/components/ui/DocumentPreview"
 import { EditarDocumento } from "./EditarDocumento"
 import { EnviarRevisionButton } from "./EnviarRevisionButton"
 import { PagoForm } from "./PagoForm"
 
 function DocLink({ url, label }: { url: string; label: string }) {
   if (!url) return <span className="text-sm text-gray-400">No subido</span>
-  const cacheUrl = `${url}${url.includes("?") ? "&" : "?"}_t=${Date.now()}`
-  return (
-    <a href={cacheUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:text-blue-800 underline">
-      {label}
-    </a>
-  )
+  return <DocumentPreview url={url} label={label} />
 }
 
 function DocumentosSection({
@@ -68,7 +64,7 @@ async function Resultado({ dni, correo }: { dni: string; correo: string }) {
   const r = result as {
     solicitante: {
       id: string; dni: string; nombres: string; apellido_paterno: string; apellido_materno: string
-      carrera_nombre: string; sede_nombre: string; universidad: string
+      carrera_manual: string; sede_nombre: string; universidad: string
       foto_url: string; titulo_url: string; dni_url: string
     }
     expediente: { id: string; codigo_expediente: string; estado: string; observaciones: string | null; fecha_revision: string | null; created_at: string } | null
@@ -76,7 +72,7 @@ async function Resultado({ dni, correo }: { dni: string; correo: string }) {
     pago: { id: string; monto: number; estado: string; tipo_pago: string; comprobante_url: string | null } | null
   }
   const { solicitante, expediente, colegiado, pago } = r
-  const esObservado = expediente?.estado === "Observado"
+  const esObservado = expediente?.estado === "Rechazado"
 
   return (
     <div className="mt-6 space-y-4">
@@ -88,7 +84,7 @@ async function Resultado({ dni, correo }: { dni: string; correo: string }) {
           <div><span className="font-medium text-gray-500">Apellido Paterno:</span> <span className="text-gray-800">{solicitante.apellido_paterno}</span></div>
           <div><span className="font-medium text-gray-500">Apellido Materno:</span> <span className="text-gray-800">{solicitante.apellido_materno}</span></div>
           <div><span className="font-medium text-gray-500">Nombres:</span> <span className="text-gray-800">{solicitante.nombres}</span></div>
-          <div><span className="font-medium text-gray-500">Carrera:</span> <span className="text-gray-800">{solicitante.carrera_nombre}</span></div>
+          <div><span className="font-medium text-gray-500">Carrera:</span> <span className="text-gray-800">{solicitante.carrera_manual}</span></div>
           <div><span className="font-medium text-gray-500">Sede:</span> <span className="text-gray-800">{solicitante.sede_nombre}</span></div>
           <div><span className="font-medium text-gray-500">Universidad:</span> <span className="text-gray-800">{solicitante.universidad}</span></div>
         </div>
@@ -136,12 +132,26 @@ async function Resultado({ dni, correo }: { dni: string; correo: string }) {
               )}
             </div>
 
-            {expediente.observaciones && (
-              <div className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800">
-                <span className="font-medium">Observación del revisor:</span>
-                <p className="mt-1">{expediente.observaciones}</p>
-              </div>
-            )}
+            {expediente.observaciones && (() => {
+              const { comentario, campos } = parsearObservaciones(expediente.observaciones!)
+              return (
+                <div className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800">
+                  <span className="font-medium">Observación del revisor:</span>
+                  <p className="mt-1 whitespace-pre-wrap">{comentario}</p>
+                  {campos && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {Object.entries(campos).map(([key, valido]) => (
+                        <span key={key} className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                          valido ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                        }`}>
+                          {valido ? "✅" : "❌"} {({ identidad: "Identidad", formacion: "Formación", foto: "Foto", titulo: "Título", dni_file: "Copia DNI" } as Record<string, string>)[key] ?? key}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
           </div>
 
           {pago && (

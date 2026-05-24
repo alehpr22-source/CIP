@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { aprobarPago, observarExpediente } from "@/actions/expediente.actions"
+import { aprobarPago, revisarExpedienteConDetalle } from "@/actions/expediente.actions"
 import { Button } from "@/components/ui/Button"
 import { Alert } from "@/components/ui/Alert"
 
@@ -39,7 +39,7 @@ export function ConfirmarPagoActions({ expedienteId }: Props) {
     setLoading("rechazar")
     setError("")
 
-    const result = await observarExpediente(expedienteId, comentario)
+    const result = await revisarExpedienteConDetalle(expedienteId, "rechazar", comentario, {})
 
     if (result?.error) {
       setError(result.error)

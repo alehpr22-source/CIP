@@ -12,7 +12,9 @@ export async function obtenerDeuda() {
     .from("expedientes")
     .select("id")
     .eq("solicitante_id", solicitante.id)
-    .single()
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle()
 
   if (!expediente) return { error: "No tienes un expediente registrado" }
 
@@ -20,7 +22,7 @@ export async function obtenerDeuda() {
     .from("colegiados")
     .select("id, estado_habilitacion, fecha_colegiatura")
     .eq("expediente_id", expediente.id)
-    .single()
+    .maybeSingle()
 
   if (!colegiado) return { error: "Aún no eres colegiado. Debes esperar la aprobación de tu expediente." }
 
@@ -87,7 +89,9 @@ export async function listarPagosMensuales() {
     .from("expedientes")
     .select("id")
     .eq("solicitante_id", solicitante.id)
-    .single()
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle()
 
   if (!expediente) return { error: null, data: [] }
 
@@ -95,7 +99,7 @@ export async function listarPagosMensuales() {
     .from("colegiados")
     .select("id")
     .eq("expediente_id", expediente.id)
-    .single()
+    .maybeSingle()
 
   if (!colegiado) return { error: null, data: [] }
 
@@ -120,7 +124,9 @@ export async function registrarPagoMensual(formData: FormData) {
     .from("expedientes")
     .select("id")
     .eq("solicitante_id", solicitante.id)
-    .single()
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle()
 
   if (!expediente) return { error: "No tienes un expediente registrado" }
 
@@ -128,7 +134,7 @@ export async function registrarPagoMensual(formData: FormData) {
     .from("colegiados")
     .select("id")
     .eq("expediente_id", expediente.id)
-    .single()
+    .maybeSingle()
 
   if (!colegiado) return { error: "Aún no eres colegiado" }
 

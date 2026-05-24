@@ -20,8 +20,8 @@ const pasos = [
     descripcion: "El comité de admisión evalúa tu expediente. Si todo está en orden, procedes al pago.",
     detalles: [
       "Un administrador revisa tus datos y documentos",
-      "Si faltara algo, el expediente se marca como Observado",
-      "Corrige lo observado y vuelve a enviar",
+      "Si faltara algo, el expediente se rechaza con observaciones",
+      "Corrige los campos observados y vuelve a enviar",
       "Una vez aprobado, genera tu voucher de pago (S/ 1,500)",
       "El administrador confirma el pago y activa tu colegiatura",
     ],

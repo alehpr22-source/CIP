@@ -121,8 +121,8 @@ export async function listarColegiados(filtros: FiltrosColegiados = {}) {
     return { error: error.message, data: null }
   }
 
-  const carreras = await supabase.from("carreras").select("id, codigo, nombre")
-  const carreraMap = new Map((carreras.data ?? []).map((c) => [c.id, c]))
+  const carreras = await supabase.from("carreras").select("id, nombre")
+  const carreraMap = new Map((carreras.data ?? []).map((c) => [c.id, c.nombre]))
 
   const result = (data ?? []).map((col: any) => {
     const expediente = col.expedientes as unknown as {
@@ -136,8 +136,6 @@ export async function listarColegiados(filtros: FiltrosColegiados = {}) {
       }
     }
 
-    const carrera = carreraMap.get(expediente.solicitantes.carrera_id)
-
     return {
       id: col.id,
       numero_cip: col.numero_cip,
@@ -149,8 +147,7 @@ export async function listarColegiados(filtros: FiltrosColegiados = {}) {
       nombres: expediente.solicitantes.nombres,
       apellido_paterno: expediente.solicitantes.apellido_paterno,
       apellido_materno: expediente.solicitantes.apellido_materno,
-      carrera_codigo: carrera?.codigo ?? "",
-      carrera_nombre: carrera?.nombre ?? "",
+      carrera_nombre: carreraMap.get(expediente.solicitantes.carrera_id) ?? "",
     }
   })
 
@@ -181,7 +178,7 @@ export async function buscarColegiadosPublico(filtros: {
 
   let solicitantesQuery = supabase
     .from("solicitantes")
-    .select("id, dni, nombres, apellido_paterno, apellido_materno, carrera_id, sede_id")
+    .select("id, dni, nombres, apellido_paterno, apellido_materno, carrera_id, carrera_manual, sede_id")
 
   if (filtros.tipo === "dni") {
     solicitantesQuery = solicitantesQuery.eq("dni", filtros.dni)
@@ -210,7 +207,6 @@ export async function buscarColegiadosPublico(filtros: {
     .select("id, solicitante_id")
     .in("solicitante_id", solicitanteIds)
 
-  const expedienteMap = new Map((expedientes ?? []).map((e) => [e.solicitante_id, e.id]))
   const expedienteIds = (expedientes ?? []).map((e) => e.id)
 
   if (expedienteIds.length === 0) {
@@ -226,16 +222,11 @@ export async function buscarColegiadosPublico(filtros: {
     return { data: [] }
   }
 
-  const carreraIds = [...new Set(solicitantes.map((s) => s.carrera_id))]
   const sedeIds = [...new Set(solicitantes.map((s) => s.sede_id))]
 
-  const [carrerasData, sedesData] = await Promise.all([
-    supabase.from("carreras").select("id, nombre").in("id", carreraIds),
-    supabase.from("sedes").select("id, nombre").in("id", sedeIds),
-  ])
+  const { data: sedesData } = await supabase.from("sedes").select("id, nombre").in("id", sedeIds)
 
-  const carreraMap = new Map((carrerasData.data ?? []).map((c) => [c.id, c.nombre]))
-  const sedeMap = new Map((sedesData.data ?? []).map((s) => [s.id, s.nombre]))
+  const sedeMap = new Map((sedesData ?? []).map((s) => [s.id, s.nombre]))
 
   const resultado: ResultadoColegiadoPublico[] = []
 
@@ -252,7 +243,7 @@ export async function buscarColegiadosPublico(filtros: {
       nombres: sol.nombres,
       apellido_paterno: sol.apellido_paterno,
       apellido_materno: sol.apellido_materno,
-      carrera_nombre: carreraMap.get(sol.carrera_id) ?? "",
+      carrera_nombre: sol.carrera_manual ?? "",
       sede_nombre: sedeMap.get(sol.sede_id) ?? "",
       estado_habilitacion: col.estado_habilitacion,
     })

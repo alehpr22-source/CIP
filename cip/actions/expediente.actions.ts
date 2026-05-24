@@ -4,8 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { requireAdminRole } from "@/lib/auth-helper"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-
-export type RevisionCampos = Record<string, boolean>
+import { formatearDetalleCampos, serializarObservaciones, type RevisionCampos } from "@/lib/constants"
 
 async function crearNotificacion(supabase: ReturnType<typeof createClient>, expedienteId: string, tipo: string, titulo: string, mensaje: string, campos?: RevisionCampos) {
   const { data: exp } = await supabase
@@ -104,7 +103,7 @@ export async function obtenerDetalleExpediente(id: string) {
         correo,
         telefono,
         universidad,
-        carrera_id,
+        carrera_manual,
         sede_id,
         foto_url,
         titulo_url,
@@ -141,10 +140,19 @@ export async function obtenerDetalleExpediente(id: string) {
   return dataWithPago as unknown as ExpedienteDetalle
 }
 
-export async function aprobarExpediente(expedienteId: string, _formData?: FormData) {
+export async function revisarExpedienteConDetalle(
+  expedienteId: string,
+  accion: "aprobar" | "observar" | "rechazar",
+  comentario: string,
+  campos: RevisionCampos,
+) {
   const auth = await requireAdminRole(["SuperAdmin", "Revisor"])
   if (!auth.success) return { error: auth.error }
   const { supabase, admin } = auth
+
+  if (accion !== "aprobar" && !comentario.trim()) {
+    return { error: "Debes agregar un comentario" }
+  }
 
   const { data: actual } = await supabase
     .from("expedientes")
@@ -154,9 +162,30 @@ export async function aprobarExpediente(expedienteId: string, _formData?: FormDa
 
   if (!actual) return { error: "Expediente no encontrado" }
 
+  let estadoNuevo: string
+  let tipoNotif: string
+  let tituloNotif: string
+  let textoNotif: string
+
+  if (accion === "aprobar") {
+    estadoNuevo = "Pendiente de pago"
+    tipoNotif = "aprobado"
+    tituloNotif = "Expediente aprobado"
+    textoNotif = "Tu documentación ha sido aprobada. Ahora puedes realizar el pago de inscripción de S/1500."
+  } else {
+    estadoNuevo = "Rechazado"
+    tipoNotif = "rechazado"
+    tituloNotif = "Expediente rechazado"
+    textoNotif = `Tu expediente ha sido rechazado.\n\n${formatearDetalleCampos(campos)}\n\nMotivo: ${comentario}`
+  }
+
   const { error: errUpdate } = await supabase
     .from("expedientes")
-    .update({ estado: "Pendiente de pago", fecha_revision: new Date().toISOString() })
+    .update({
+      estado: estadoNuevo,
+      observaciones: serializarObservaciones(comentario, campos),
+      fecha_revision: new Date().toISOString(),
+    })
     .eq("id", expedienteId)
 
   if (errUpdate) return { error: errUpdate.message }
@@ -165,88 +194,11 @@ export async function aprobarExpediente(expedienteId: string, _formData?: FormDa
     expediente_id: expedienteId,
     admin_id: admin.id,
     estado_anterior: actual.estado,
-    estado_nuevo: "Pendiente de pago",
-  })
-
-  await crearNotificacion(supabase, expedienteId, "aprobado",
-    "Expediente aprobado",
-    "Tu documentación ha sido aprobada. Ahora puedes realizar el pago de inscripción de S/1500.")
-
-  revalidatePath("/admin/expedientes")
-  redirect("/admin/expedientes")
-}
-
-export async function observarExpediente(expedienteId: string, comentario: string) {
-  if (!comentario.trim()) return { error: "Debes agregar un comentario" }
-
-  const auth = await requireAdminRole(["SuperAdmin", "Revisor"])
-  if (!auth.success) return { error: auth.error }
-  const { supabase, admin } = auth
-
-  const { data: actual } = await supabase
-    .from("expedientes")
-    .select("estado")
-    .eq("id", expedienteId)
-    .single()
-
-  if (!actual) return { error: "Expediente no encontrado" }
-
-  const { error: errUpdate } = await supabase
-    .from("expedientes")
-    .update({ estado: "Observado", observaciones: comentario, fecha_revision: new Date().toISOString() })
-    .eq("id", expedienteId)
-
-  if (errUpdate) return { error: errUpdate.message }
-
-  await supabase.from("historial_estados_expediente").insert({
-    expediente_id: expedienteId,
-    admin_id: admin.id,
-    estado_anterior: actual.estado,
-    estado_nuevo: "Observado",
+    estado_nuevo: estadoNuevo,
     comentario,
   })
 
-  await crearNotificacion(supabase, expedienteId, "observado",
-    "Expediente observado",
-    `Tu expediente ha sido observado. Motivo: ${comentario}. Ingresa a tu dashboard para corregir los documentos.`)
-
-  revalidatePath("/admin/expedientes")
-  redirect("/admin/expedientes")
-}
-
-export async function rechazarExpediente(expedienteId: string, comentario: string) {
-  if (!comentario.trim()) return { error: "Debes agregar un comentario" }
-
-  const auth = await requireAdminRole(["SuperAdmin", "Revisor"])
-  if (!auth.success) return { error: auth.error }
-  const { supabase, admin } = auth
-
-  const { data: actual } = await supabase
-    .from("expedientes")
-    .select("estado")
-    .eq("id", expedienteId)
-    .single()
-
-  if (!actual) return { error: "Expediente no encontrado" }
-
-  const { error: errUpdate } = await supabase
-    .from("expedientes")
-    .update({ estado: "Rechazado", observaciones: comentario, fecha_revision: new Date().toISOString() })
-    .eq("id", expedienteId)
-
-  if (errUpdate) return { error: errUpdate.message }
-
-  await supabase.from("historial_estados_expediente").insert({
-    expediente_id: expedienteId,
-    admin_id: admin.id,
-    estado_anterior: actual.estado,
-    estado_nuevo: "Rechazado",
-    comentario,
-  })
-
-  await crearNotificacion(supabase, expedienteId, "rechazado",
-    "Expediente rechazado",
-    `Tu expediente ha sido rechazado. Motivo: ${comentario}.`)
+  await crearNotificacion(supabase, expedienteId, tipoNotif, tituloNotif, textoNotif, campos)
 
   revalidatePath("/admin/expedientes")
   redirect("/admin/expedientes")
@@ -263,8 +215,7 @@ export async function aprobarPago(expedienteId: string, _formData?: FormData) {
       id,
       estado,
       solicitantes!expedientes_solicitante_id_fkey (
-        id,
-        carrera_id
+        id
       )
     `)
     .eq("id", expedienteId)
@@ -288,6 +239,14 @@ export async function aprobarPago(expedienteId: string, _formData?: FormData) {
 
   if (errPago) return { error: errPago.message }
 
+  const { data: primeraCarrera } = await supabase
+    .from("carreras")
+    .select("id")
+    .limit(1)
+    .single()
+
+  if (!primeraCarrera) return { error: "No hay carreras configuradas en el sistema" }
+
   const { data: cipResult } = await supabase.rpc("incrementar_cip")
   const numeroCip = cipResult as string
 
@@ -297,7 +256,7 @@ export async function aprobarPago(expedienteId: string, _formData?: FormData) {
     .from("colegiados")
     .insert({
       expediente_id: expedienteId,
-      carrera_id: (expediente.solicitantes as unknown as { carrera_id: string }).carrera_id,
+      carrera_id: primeraCarrera.id,
       numero_cip: numeroCip,
     })
     .select("numero_cip")
@@ -360,7 +319,7 @@ interface ExpedienteDetalle {
     correo: string | null
     telefono: string | null
     universidad: string
-    carrera_id: string
+    carrera_manual: string
     sede_id: string
     foto_url: string
     titulo_url: string

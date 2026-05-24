@@ -11,9 +11,9 @@ export interface Database {
   public: {
     Tables: {
       carreras: {
-        Row: { id: string; codigo: string; nombre: string }
-        Insert: { id?: string; codigo: string; nombre: string }
-        Update: { id?: string; codigo?: string; nombre?: string }
+        Row: { id: string; nombre: string }
+        Insert: { id?: string; nombre: string }
+        Update: { id?: string; nombre?: string }
         Relationships: []
       }
       sedes: {
@@ -26,23 +26,26 @@ export interface Database {
         Row: {
           id: string; dni: string; nombres: string; apellido_paterno: string; apellido_materno: string
           correo: string | null; telefono: string | null
-          carrera_id: string; sede_id: string; universidad: string
+          carrera_id: string | null; sede_id: string; universidad: string
           foto_url: string; titulo_url: string; dni_url: string
           validado_reniec: boolean; created_at: string
+          universidad_id: string | null; carrera_manual: string | null
         }
         Insert: {
           id?: string; dni: string; nombres: string; apellido_paterno: string; apellido_materno: string
           correo?: string | null; telefono?: string | null
-          carrera_id: string; sede_id: string; universidad: string
+          carrera_id?: string | null; sede_id: string; universidad: string
           foto_url?: string; titulo_url?: string; dni_url?: string
           validado_reniec?: boolean
+          universidad_id?: string | null; carrera_manual?: string | null
         }
         Update: {
           id?: string; dni?: string; nombres?: string; apellido_paterno?: string; apellido_materno?: string
           correo?: string | null; telefono?: string | null
-          carrera_id?: string; sede_id?: string; universidad?: string
+          carrera_id?: string | null; sede_id?: string; universidad?: string
           foto_url?: string; titulo_url?: string; dni_url?: string
           validado_reniec?: boolean
+          universidad_id?: string | null; carrera_manual?: string | null
         }
         Relationships: [
           { foreignKeyName: "solicitantes_carrera_id_fkey"; columns: ["carrera_id"]; referencedRelation: "carreras"; referencedColumns: ["id"] },

@@ -3,7 +3,7 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { obtenerDetalleExpediente } from "@/actions/expediente.actions"
 import { Badge } from "@/components/ui/Badge"
-import { ESTADO_BADGE, formatDate } from "@/lib/constants"
+import { ESTADO_BADGE, formatDate, parsearObservaciones } from "@/lib/constants"
 import { ExpedienteActions } from "./ExpedienteActions"
 import { ConfirmarPagoActions } from "./ConfirmarPagoActions"
 import { DocumentPreview } from "@/components/ui/DocumentPreview"
@@ -13,6 +13,19 @@ function InfoRow({ label, value }: { label: string; value: string }) {
     <div className="flex border-b border-gray-100 py-2 text-sm">
       <span className="w-40 font-medium text-gray-500">{label}</span>
       <span className="text-gray-800">{value}</span>
+    </div>
+  )
+}
+
+function RevisionBadge({ valido, label }: { valido: boolean; label: string }) {
+  return (
+    <div className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium ${
+      valido
+        ? "border-green-200 bg-green-50 text-green-700"
+        : "border-red-200 bg-red-50 text-red-700"
+    }`}>
+      <span>{valido ? "✅" : "❌"}</span>
+      <span>{label}</span>
     </div>
   )
 }
@@ -33,15 +46,38 @@ async function ExpedienteContent({ id }: { id: string }) {
     )
   }
 
-  const [carreras, sedes] = await Promise.all([
-    supabase.from("carreras").select("id, nombre"),
-    supabase.from("sedes").select("id, nombre"),
-  ])
+  const { data: sedes } = await supabase.from("sedes").select("id, nombre")
 
   const s = detalle.solicitantes
-  const carrera = carreras.data?.find((c) => c.id === s.carrera_id)
-  const sede = sedes.data?.find((sed) => sed.id === s.sede_id)
+  const sede = sedes?.find((sed) => sed.id === s.sede_id)
   const pago = detalle.pagos_inscripcion?.[0]
+
+  function ResultadoRevision({ observaciones }: { observaciones: string }) {
+    const { comentario, campos } = parsearObservaciones(observaciones)
+    if (!campos) {
+      return (
+        <section className="rounded-lg border bg-white p-6">
+          <h2 className="mb-4 text-lg font-semibold text-gray-800">📝 Observaciones</h2>
+          <p className="text-sm text-gray-700 whitespace-pre-wrap">{comentario}</p>
+        </section>
+      )
+    }
+    return (
+      <section className="rounded-lg border bg-white p-6">
+        <h2 className="mb-4 text-lg font-semibold text-gray-800">📝 Resultado de Revisión</h2>
+        {comentario && (
+          <p className="mb-4 text-sm text-gray-700 whitespace-pre-wrap">{comentario}</p>
+        )}
+        <div className="flex flex-wrap gap-2">
+          {Object.entries(campos).map(([key, valido]) => (
+            <RevisionBadge key={key} valido={!!valido} label={
+              ({ identidad: "Identidad", formacion: "Formación", foto: "Foto", titulo: "Título", dni_file: "Copia DNI" } as Record<string, string>)[key] ?? key
+            } />
+          ))}
+        </div>
+      </section>
+    )
+  }
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -66,7 +102,7 @@ async function ExpedienteContent({ id }: { id: string }) {
         <InfoRow label="Correo" value={s.correo ?? "-"} />
         <InfoRow label="Teléfono" value={s.telefono ?? "-"} />
         <InfoRow label="Universidad" value={s.universidad} />
-        <InfoRow label="Carrera" value={carrera?.nombre ?? "-"} />
+        <InfoRow label="Carrera" value={s.carrera_manual ?? "-"} />
         <InfoRow label="Sede" value={sede?.nombre ?? "-"} />
         <InfoRow label="Validado RENIEC" value={s.validado_reniec ? "✅ Sí" : "❌ No"} />
       </section>
@@ -74,11 +110,31 @@ async function ExpedienteContent({ id }: { id: string }) {
       {/* Documentos */}
       <section className="rounded-lg border bg-white p-6">
         <h2 className="mb-4 text-lg font-semibold text-gray-800">📄 Documentos</h2>
-        <div className="flex flex-wrap gap-3">
-          {s.foto_url && <DocumentPreview url={s.foto_url} label="📷 Foto" />}
-          {s.titulo_url && <DocumentPreview url={s.titulo_url} label="🎓 Título" />}
-          {s.dni_url && <DocumentPreview url={s.dni_url} label="🆔 Copia DNI" />}
-          {pago?.comprobante_url && <DocumentPreview url={pago.comprobante_url} label="🧾 Voucher" />}
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {s.foto_url && (
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-gray-500">Foto</p>
+              <DocumentPreview url={s.foto_url} label="Foto" thumbnail />
+            </div>
+          )}
+          {s.titulo_url && (
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-gray-500">Título</p>
+              <DocumentPreview url={s.titulo_url} label="Título" thumbnail />
+            </div>
+          )}
+          {s.dni_url && (
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-gray-500">Copia DNI</p>
+              <DocumentPreview url={s.dni_url} label="Copia DNI" thumbnail />
+            </div>
+          )}
+          {pago?.comprobante_url && (
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-gray-500">Voucher</p>
+              <DocumentPreview url={pago.comprobante_url} label="Voucher" thumbnail />
+            </div>
+          )}
         </div>
       </section>
 
@@ -100,14 +156,16 @@ async function ExpedienteContent({ id }: { id: string }) {
         </section>
       )}
 
+      {/* Resultados de revisión */}
+      {detalle.observaciones && (
+        <ResultadoRevision observaciones={detalle.observaciones} />
+      )}
+
       {/* Fecha */}
       <section className="rounded-lg border bg-white p-6">
         <InfoRow label="Fecha de registro" value={formatDate(detalle.created_at)} />
         {detalle.fecha_revision && (
           <InfoRow label="Fecha de revisión" value={formatDate(detalle.fecha_revision)} />
-        )}
-        {detalle.observaciones && (
-          <InfoRow label="Observaciones" value={detalle.observaciones} />
         )}
       </section>
 
@@ -117,7 +175,7 @@ async function ExpedienteContent({ id }: { id: string }) {
           <h2 className="mb-4 text-lg font-semibold text-gray-800">⚡ Revisión de Pago</h2>
           <ConfirmarPagoActions expedienteId={detalle.id} />
         </section>
-      ) : (detalle.estado === "Pendiente" || detalle.estado === "Observado") && (
+      ) : detalle.estado === "Pendiente" && (
         <section className="rounded-lg border bg-white p-6">
           <h2 className="mb-4 text-lg font-semibold text-gray-800">⚡ Acciones</h2>
           <ExpedienteActions expedienteId={detalle.id} estado={detalle.estado} />

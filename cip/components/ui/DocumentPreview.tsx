@@ -8,13 +8,14 @@ interface DocumentPreviewProps {
   url: string
   label: string
   thumbnail?: boolean
+  className?: string
 }
 
 function esImagen(url: string) {
   return /\.(jpg|jpeg|png|gif|webp|bmp)(\?|$)/i.test(url)
 }
 
-export function DocumentPreview({ url, label, thumbnail }: DocumentPreviewProps) {
+export function DocumentPreview({ url, label, thumbnail, className }: DocumentPreviewProps) {
   const [open, setOpen] = useState(false)
   const isImage = esImagen(url)
   const src = `${url}?_t=${Date.now()}`
@@ -23,7 +24,7 @@ export function DocumentPreview({ url, label, thumbnail }: DocumentPreviewProps)
     return (
       <>
         <button type="button" onClick={() => setOpen(true)} className="cursor-pointer transition-opacity hover:opacity-80">
-          <img src={src} alt={label} className="max-h-64 rounded-lg border object-contain" />
+          <img src={src} alt={label} className={`max-h-32 rounded-lg border object-contain ${className ?? ""}`} />
         </button>
         {open && <Lightbox src={src} alt={label} onClose={() => setOpen(false)} />}
       </>

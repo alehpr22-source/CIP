@@ -4,8 +4,6 @@ import { requireUser } from "@/lib/auth-helper"
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
 
-const CARRERA_OTRO = "__otro__"
-
 export async function actualizarDatos(formData: FormData) {
   const auth = await requireUser()
   if (!auth.success) return { error: auth.error }
@@ -14,7 +12,6 @@ export async function actualizarDatos(formData: FormData) {
   const correo = formData.get("correo") as string
   const telefono = formData.get("telefono") as string
   const universidadId = formData.get("universidad_id") as string
-  const carreraId = formData.get("carrera_id") as string
   const carreraManual = formData.get("carrera_manual") as string
 
   const updates: Record<string, string | null> = {}
@@ -33,11 +30,7 @@ export async function actualizarDatos(formData: FormData) {
     if (univ) updates.universidad = univ.nombre
   }
 
-  if (carreraId && carreraId !== CARRERA_OTRO) {
-    updates.carrera_id = carreraId
-    updates.carrera_manual = null
-  } else if (carreraManual) {
-    updates.carrera_id = null
+  if (carreraManual) {
     updates.carrera_manual = carreraManual
   }
 
