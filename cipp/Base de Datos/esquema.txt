@@ -1,0 +1,174 @@
+-- ============================================
+-- ESQUEMA DE BASE DE DATOS - CIP
+-- Sistema de Colegiatura - Colegio de Ingenieros del Perú
+-- Generado: 24/05/2026
+-- ============================================
+
+-- NOTA: Las tablas universidades y universidad_carreras se definen en
+-- migracion_universidades.sql. Ver ese archivo para el DDL completo.
+
+-- 1. CARRERAS
+create table if not exists public.carreras (
+  id uuid not null default gen_random_uuid(),
+  codigo varchar(10) not null,
+  nombre varchar(255) not null,
+  constraint carreras_pkey primary key (id),
+  constraint carreras_codigo_key unique (codigo)
+);
+
+-- 2. SEDES
+create table if not exists public.sedes (
+  id uuid not null default gen_random_uuid(),
+  nombre varchar(255) not null,
+  direccion varchar(500),
+  telefono varchar(20),
+  constraint sedes_pkey primary key (id)
+);
+
+-- 3. SOLICITANTES
+create table if not exists public.solicitantes (
+  id uuid not null default gen_random_uuid(),
+  dni varchar(8) not null,
+  nombres varchar(255) not null,
+  apellido_paterno varchar(255) not null,
+  apellido_materno varchar(255) not null,
+  correo varchar(255),
+  telefono varchar(20),
+  carrera_id uuid not null,
+  sede_id uuid not null,
+  universidad varchar(255) not null,
+  foto_url text not null default '',
+  titulo_url text not null default '',
+  dni_url text not null default '',
+  validado_reniec boolean not null default false,
+  created_at timestamptz not null default now(),
+  constraint solicitantes_pkey primary key (id),
+  constraint solicitantes_carrera_id_fkey foreign key (carrera_id) references public.carreras (id),
+  constraint solicitantes_sede_id_fkey foreign key (sede_id) references public.sedes (id)
+);
+
+-- 4. EXPEDIENTES
+create table if not exists public.expedientes (
+  id uuid not null default gen_random_uuid(),
+  solicitante_id uuid not null,
+  codigo_expediente varchar(20) not null,
+  estado varchar(20) not null default 'Pendiente',
+  observaciones text,
+  fecha_revision timestamptz,
+  created_at timestamptz not null default now(),
+  constraint expedientes_pkey primary key (id),
+  constraint expedientes_solicitante_id_fkey foreign key (solicitante_id) references public.solicitantes (id),
+  constraint expedientes_codigo_expediente_key unique (codigo_expediente),
+  constraint expedientes_estado_check check (estado in ('Pendiente', 'Observado', 'Aprobado', 'Rechazado', 'Pendiente de pago'))
+);
+
+-- 5. PAGOS INSCRIPCION
+create table if not exists public.pagos_inscripcion (
+  id uuid not null default gen_random_uuid(),
+  expediente_id uuid not null,
+  tipo_pago varchar(20) not null default 'Virtual',
+  monto numeric(10,2) not null default 1500,
+  estado varchar(20) not null default 'Pendiente',
+  transaccion_id varchar(100),
+  comprobante_url text,
+  created_at timestamptz not null default now(),
+  constraint pagos_inscripcion_pkey primary key (id),
+  constraint pagos_inscripcion_expediente_id_fkey foreign key (expediente_id) references public.expedientes (id),
+  constraint pagos_inscripcion_estado_check check (estado in ('Pendiente', 'Aprobado', 'Rechazado')),
+  constraint pagos_inscripcion_tipo_check check (tipo_pago in ('Virtual', 'Presencial'))
+);
+
+-- 6. COLEGIADOS
+create table if not exists public.colegiados (
+  id uuid not null default gen_random_uuid(),
+  expediente_id uuid not null,
+  carrera_id uuid not null,
+  numero_cip varchar(20) not null,
+  estado_habilitacion varchar(20) not null default 'Habilitado',
+  fecha_colegiatura date not null default current_date,
+  carnet_url text,
+  qr_url text,
+  created_at timestamptz not null default now(),
+  constraint colegiados_pkey primary key (id),
+  constraint colegiados_expediente_id_fkey foreign key (expediente_id) references public.expedientes (id),
+  constraint colegiados_carrera_id_fkey foreign key (carrera_id) references public.carreras (id),
+  constraint colegiados_estado_check check (estado_habilitacion in ('Habilitado', 'Inhabilitado'))
+);
+
+-- Índice único compuesto: mismo CIP permitido en distintas carreras
+create unique index if not exists colegiados_carrera_cip_unique
+  on public.colegiados (carrera_id, numero_cip);
+
+-- 7. USUARIOS ADMIN
+create table if not exists public.usuarios_admin (
+  id uuid not null default gen_random_uuid(),
+  auth_user_id uuid not null,
+  nombres varchar(255) not null,
+  apellidos varchar(255) not null,
+  correo varchar(255) not null,
+  rol varchar(20) not null default 'Revisor',
+  sede_id uuid,
+  constraint usuarios_admin_pkey primary key (id),
+  constraint usuarios_admin_auth_user_id_key unique (auth_user_id),
+  constraint usuarios_admin_correo_key unique (correo),
+  constraint usuarios_admin_sede_id_fkey foreign key (sede_id) references public.sedes (id),
+  constraint usuarios_admin_rol_check check (rol in ('SuperAdmin', 'Revisor', 'Tesoreria'))
+);
+
+-- 8. PAGOS MENSUALIDADES
+create table if not exists public.pagos_mensualidades (
+  id uuid not null default gen_random_uuid(),
+  colegiado_id uuid not null,
+  anio integer not null,
+  mes integer not null,
+  monto numeric(10,2) not null default 20,
+  tipo_pago varchar(20) not null default 'Virtual',
+  estado varchar(20) not null default 'Pendiente',
+  transaccion_id varchar(100),
+  comprobante_url text,
+  created_at timestamptz not null default now(),
+  constraint pagos_mensualidades_pkey primary key (id),
+  constraint pagos_mensualidades_colegiado_id_fkey foreign key (colegiado_id) references public.colegiados (id),
+  constraint pagos_mensualidades_estado_check check (estado in ('Pendiente', 'Aprobado', 'Rechazado')),
+  constraint pagos_mensualidades_tipo_check check (tipo_pago in ('Virtual', 'Presencial'))
+);
+
+-- 9. HISTORIAL ESTADOS EXPEDIENTE
+create table if not exists public.historial_estados_expediente (
+  id uuid not null default gen_random_uuid(),
+  expediente_id uuid not null,
+  admin_id uuid not null,
+  estado_anterior varchar(20),
+  estado_nuevo varchar(20) not null,
+  comentario text,
+  created_at timestamptz not null default now(),
+  constraint historial_estados_expediente_pkey primary key (id),
+  constraint historial_estados_expediente_expediente_id_fkey foreign key (expediente_id) references public.expedientes (id),
+  constraint historial_estados_expediente_admin_id_fkey foreign key (admin_id) references public.usuarios_admin (id)
+);
+
+-- 10. CIP CORRELATIVOS
+create table if not exists public.cip_correlativos (
+  id uuid not null default gen_random_uuid(),
+  carrera_id uuid not null,
+  ultimo_numero integer not null default 0,
+  constraint cip_correlativos_pkey primary key (id),
+  constraint cip_correlativos_carrera_id_fkey foreign key (carrera_id) references public.carreras (id),
+  constraint cip_correlativos_carrera_id_key unique (carrera_id)
+);
+
+-- 11. UNIVERSIDADES (Agregado 24/05/2026)
+create table if not exists public.universidades (
+  id uuid not null default gen_random_uuid(),
+  nombre varchar(255) not null,
+  constraint universidades_pkey primary key (id)
+);
+
+-- 12. UNIVERSIDAD_CARRERAS (Agregado 24/05/2026)
+create table if not exists public.universidad_carreras (
+  universidad_id uuid not null,
+  carrera_id uuid not null,
+  constraint universidad_carreras_pkey primary key (universidad_id, carrera_id),
+  constraint universidad_carreras_universidad_id_fkey foreign key (universidad_id) references public.universidades (id),
+  constraint universidad_carreras_carrera_id_fkey foreign key (carrera_id) references public.carreras (id)
+);
